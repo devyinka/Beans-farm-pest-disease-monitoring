@@ -186,3 +186,40 @@ export type alertHistoryprops = {
   AlertHistory: AlertHistoryItem[];
   status: UIStatus;
 };
+
+export type RemoteConfigPayload = {
+  aiConfidence: number;
+  sensorPollingRateMinutes: number;
+  beanAge: number;
+  updatedAt: string;
+};
+
+export type RemoteTuningPayload = {
+  aiConfidence: number;
+  sensorPollingRateMinutes: number;
+  updatedAt: string;
+};
+
+export type BeanAgePayload = {
+  beanAge: number;
+  updatedAt: string;
+};
+
+export type RemoteConfig = {
+  aiConfidence: number;
+  sensorPollingRateMinutes: number;
+  BeanAge: number;
+};
+
+export type RemoteConfigurationProps = {
+  status: UIStatus;
+  defaultConfidence?: number;
+  defaultIntervalMinutes?: number;
+  onSave?: (payload: RemoteTuningPayload) => void | Promise<void>;
+};
+
+export type BeanAgeConfigurationProps = {
+  status: UIStatus;
+  defaultBeanAge?: number;
+  onSave?: (payload: BeanAgePayload) => void | Promise<void>;
+};

@@ -54,7 +54,7 @@ export const Header = ({
           <h4 style={{ color: readingColor }}>
             Last reading: {lastReading} mins ago
           </h4>
-          <h4>Next reading: {nextReading} mins ago</h4>
+          <h4>Next reading in: {nextReading} mins</h4>
         </div>
       </div>
     </div>

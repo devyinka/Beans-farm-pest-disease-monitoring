@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import TopNav from "@/components/Topnav";
 import { useSocketStatus } from "@/context/socketContext";
 import { useFarmData } from "@/hook/useFarmData";
@@ -8,12 +8,16 @@ import { useAlertHistory } from "@/hook/useAlertHistory";
 
 import { mockDisease, mockHealthy, mockPest } from "@/Mock/Mockdata";
 import { alertHistoryMock } from "@/Mock/Alertmock";
+import { remoteConfigDefault } from "@/Mock/RemoteConfig";
 
 import {
   ChartDataSourceLabel,
   ClimateChartPoint,
   SoilChartPoint,
   FarmUpdatePayload,
+  BeanAgePayload,
+  RemoteTuningPayload,
+  RemoteConfig,
   UIStatus,
 } from "@/types/type";
 import ClimateLineChart from "@/components/Dashboard/ClimateLineChart";
@@ -27,7 +31,9 @@ import { FarmstatusBox } from "@/components/Dashboard/Farmstatusbox";
 import { STATUS_STYLES } from "@/types/UIStstus";
 import { Solution } from "@/components/Dashboard/Solution";
 import { Alerthistory } from "@/components/Dashboard/Alerthistory";
-
+import { RemoteConfiguration } from "@/components/Dashboard/RemoteConfiguration";
+import { BeanAgeConfiguration } from "@/components/Dashboard/BeanAgeConfiguration";
+import axios from "axios";
 // Helper to extract specific sensor values from the farm data payload
 const getSensorValue = (
   sensors: Array<{ id: string; value: number }>,
@@ -40,7 +46,19 @@ const getSensorValue = (
 
 // Main dashboard page component
 const DashboardPage = () => {
+  const BACKENDURL =
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
   const { isConnected } = useSocketStatus();
+
+  const [remoteConfig, setRemoteConfig] =
+    useState<RemoteConfig>(remoteConfigDefault);
+
+  // Local header timing override used after remote configuration is successfully saved.
+  const [configAppliedAt, setConfigAppliedAt] = useState<number | null>(null);
+  const [configIntervalMinutes, setConfigIntervalMinutes] = useState<
+    number | null
+  >(null);
+  const [clockTick, setClockTick] = useState<number>(Date.now());
 
   // Live values supplied by the socket hook (no mock fallback).
   const { farmData, chartdata, soilchartdata, minutesago, minituesnext } =
@@ -51,6 +69,16 @@ const DashboardPage = () => {
   useEffect(() => {
     fetchAlertHistory();
   }, [fetchAlertHistory]);
+
+  useEffect(() => {
+    if (configAppliedAt === null || configIntervalMinutes === null) return;
+
+    const timer = setInterval(() => {
+      setClockTick(Date.now());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, [configAppliedAt, configIntervalMinutes]);
 
   // Determine if we have live data or should fall back to mock for initial display.
   const hasLiveData = farmData !== null;
@@ -69,7 +97,7 @@ const DashboardPage = () => {
       dashboardData.AIData.ui_status !== "healthy",
     status,
   };
-
+  // For soil chart, we also want to include pH as a key metric, so we create a separate seed point.
   const soilSeed: SoilChartPoint = {
     time: dashboardData.timestamp,
     soil: getSensorValue(dashboardData.sensors, "soil"),
@@ -88,6 +116,70 @@ const DashboardPage = () => {
     ? "LIVE STREAM"
     : "MOCK SEED";
 
+  const hasConfigTimingOverride =
+    configAppliedAt !== null && configIntervalMinutes !== null;
+
+  const elapsedSinceConfigSave = hasConfigTimingOverride
+    ? Math.floor((clockTick - configAppliedAt) / 60000)
+    : 0;
+
+  const displayLastReading = hasConfigTimingOverride
+    ? Math.max(0, elapsedSinceConfigSave)
+    : minutesago;
+
+  const displayNextReading = hasConfigTimingOverride
+    ? Math.max(0, configIntervalMinutes - elapsedSinceConfigSave)
+    : minituesnext;
+
+  const applyRemoteTuningToUI = (payload: RemoteTuningPayload) => {
+    setRemoteConfig((prev) => ({
+      aiConfidence: payload.aiConfidence,
+      sensorPollingRateMinutes: payload.sensorPollingRateMinutes,
+      BeanAge: prev.BeanAge,
+    }));
+
+    const now = Date.now();
+    setConfigAppliedAt(now);
+    setConfigIntervalMinutes(payload.sensorPollingRateMinutes);
+    setClockTick(now);
+  };
+
+  const applyBeanAgeToUI = (payload: BeanAgePayload) => {
+    setRemoteConfig((prev) => ({
+      ...prev,
+      BeanAge: payload.beanAge,
+    }));
+  };
+
+  // Handler for when the user saves new remote configuration settings from the dashboard UI. This will send the updated config to the backend and also update local state to reflect the new settings immediately in the UI.
+  const handleRemoteSettingsSave = async (payload: RemoteTuningPayload) => {
+    try {
+      const response = await axios.post(
+        `${BACKENDURL}/api/device-config/remote-settings`,
+        payload,
+      );
+      console.log("Remote settings saved successfully:", response.data);
+      applyRemoteTuningToUI(payload);
+    } catch (error) {
+      console.error("Failed to save remote settings:", error);
+      applyRemoteTuningToUI(payload);
+    }
+  };
+
+  const handleBeanAgeSave = async (payload: BeanAgePayload) => {
+    try {
+      const response = await axios.post(
+        `${BACKENDURL}/api/device-config/bean-age`,
+        payload,
+      );
+      console.log("Bean age saved successfully:", response.data);
+      applyBeanAgeToUI(payload);
+    } catch (error) {
+      console.error("Failed to save bean age:", error);
+      applyBeanAgeToUI(payload);
+    }
+  };
+
   return (
     <div>
       <TopNav
@@ -105,8 +197,8 @@ const DashboardPage = () => {
         dotColor={ui.dotColor}
         titleColor={ui.headerTitleColor}
         readingColor={ui.readingColor}
-        lastReading={minutesago}
-        nextReading={minituesnext}
+        lastReading={displayLastReading}
+        nextReading={displayNextReading}
       />
 
       <FarmstatusBox
@@ -155,13 +247,44 @@ const DashboardPage = () => {
         status={status}
         dataSourceLabel={dataSourceLabel}
       />
-      <div className="grid grid-cols-1 gap-4 bg-[#f9f9f9] p-4 md:grid-cols-2 md:items-stretch lg:grid-cols-3">
-        <Solution farmData={dashboardData} status={status} />
-        <Alerthistory
-          AlertHistory={alertHistory.length ? alertHistory : alertHistoryMock}
-          status={status}
-        />
-      </div>
+      <section className="bg-[#f9f9f9] p-4">
+        <h3 className="mb-3 text-sm font-bold tracking-[0.08em] text-[#5c6672] uppercase">
+          Farm Monitoring Insights
+        </h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
+          <Solution farmData={dashboardData} status={status} />
+          <Alerthistory
+            AlertHistory={alertHistory.length ? alertHistory : alertHistoryMock}
+            status={status}
+          />
+        </div>
+      </section>
+
+      <section className="bg-[#eef1f5] px-4 py-5">
+        <div className="mb-3">
+          <h3 className="text-sm font-bold tracking-[0.08em] text-[#4a5565] uppercase">
+            ESP32 Installation & Farm Setup
+          </h3>
+          <p className="mt-1 text-xs text-[#6a7382]">
+            These controls are for system setup and commissioning, separate from
+            live monitoring data.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
+          <RemoteConfiguration
+            status={status}
+            defaultConfidence={remoteConfig.aiConfidence}
+            defaultIntervalMinutes={remoteConfig.sensorPollingRateMinutes}
+            onSave={handleRemoteSettingsSave}
+          />
+          <BeanAgeConfiguration
+            status={status}
+            defaultBeanAge={remoteConfig.BeanAge}
+            onSave={handleBeanAgeSave}
+          />
+        </div>
+      </section>
     </div>
   );
 };
