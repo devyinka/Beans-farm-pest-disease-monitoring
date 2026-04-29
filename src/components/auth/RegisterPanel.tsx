@@ -2,6 +2,7 @@ import AuthButton from "./SubmitButton";
 import AuthField from "./AuthField";
 import AuthPanelHeader from "./AuthPanelHeader";
 import type { RegisterPanelProps } from "./types";
+import { useMemo } from "react";
 
 const RegisterPanel = ({
   firstName,
@@ -22,7 +23,22 @@ const RegisterPanel = ({
   onConfirmPasswordChange,
   onSubmit,
   onSwitchLogin,
+  isSubmitting = false,
+  errorMessage = "",
+  successMessage = "",
 }: RegisterPanelProps) => {
+  const canSubmit = useMemo(
+    () =>
+      firstName.trim().length > 0 &&
+      lastName.trim().length > 0 &&
+      email.trim().length > 0 &&
+      phone.trim().length > 0 &&
+      location.trim().length > 0 &&
+      password.trim().length > 0 &&
+      confirmPassword.trim().length > 0,
+    [firstName, lastName, email, phone, location, password, confirmPassword],
+  );
+
   return (
     <div>
       <AuthPanelHeader
@@ -96,7 +112,26 @@ const RegisterPanel = ({
           value={confirmPassword}
           onChange={onConfirmPasswordChange}
         />
-        <AuthButton type="submit">Create account →</AuthButton>
+        {errorMessage ? (
+          <div className="mb-2 rounded-[9px] border border-[rgba(255,147,64,0.38)] bg-[rgba(255,147,64,0.14)] px-3 py-2 text-[11px] text-[#ffd2b0]">
+            {errorMessage}
+          </div>
+        ) : null}
+
+        {successMessage ? (
+          <div className="mb-2 rounded-[9px] border border-[rgba(142,232,155,0.38)] bg-[rgba(142,232,155,0.14)] px-3 py-2 text-[11px] text-[#c8ffd0]">
+            {successMessage}
+          </div>
+        ) : null}
+
+        <AuthButton
+          type="submit"
+          disabled={!canSubmit}
+          isLoading={isSubmitting}
+          loadingLabel="Creating account..."
+        >
+          Create account →
+        </AuthButton>
       </form>
       <p className="mt-3.5 text-center text-xs text-[rgba(255,255,255,0.28)]">
         Already registered?{" "}

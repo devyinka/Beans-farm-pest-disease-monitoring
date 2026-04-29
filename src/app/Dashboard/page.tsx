@@ -82,7 +82,7 @@ const DashboardPage = () => {
 
   // Determine if we have live data or should fall back to mock for initial display.
   const hasLiveData = farmData !== null;
-  const dashboardData = (farmData ?? mockDisease) as FarmUpdatePayload;
+  const dashboardData = (farmData ?? mockHealthy) as FarmUpdatePayload;
 
   const status = (dashboardData.AIData.ui_status as UIStatus) ?? "healthy";
   const ui = STATUS_STYLES[status] ?? STATUS_STYLES.healthy;
@@ -131,6 +131,7 @@ const DashboardPage = () => {
     ? Math.max(0, configIntervalMinutes - elapsedSinceConfigSave)
     : minituesnext;
 
+  // Handlers to apply remote configuration changes to the UI immediately after saving, even if the backend request fails. This ensures the user sees their changes reflected in the dashboard right away, providing a more responsive experience.
   const applyRemoteTuningToUI = (payload: RemoteTuningPayload) => {
     setRemoteConfig((prev) => ({
       aiConfidence: payload.aiConfidence,
@@ -147,7 +148,7 @@ const DashboardPage = () => {
   const applyBeanAgeToUI = (payload: BeanAgePayload) => {
     setRemoteConfig((prev) => ({
       ...prev,
-      BeanAge: payload.beanAge,
+      BeanAge: payload.plantingDate,
     }));
   };
 
@@ -271,7 +272,7 @@ const DashboardPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
+        <div className="grid grid-cols- gap-4 md:grid-cols-2 md:items-stretch">
           <RemoteConfiguration
             status={status}
             defaultConfidence={remoteConfig.aiConfidence}

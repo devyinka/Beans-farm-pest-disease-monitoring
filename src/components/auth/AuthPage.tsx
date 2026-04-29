@@ -1,15 +1,16 @@
 "use client";
-import axios from "axios";
-import { useMemo, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 import AuthTabs from "./AuthTabs";
 import ForgotPanel from "./ForgotPanel";
 import LoginPanel from "./LoginPanel";
 import RegisterPanel from "./RegisterPanel";
+import { useRouter } from "next/navigation";
+import BACKENDAPI from "@/API";
 
 import type { AuthTab } from "./types";
 
 const AuthPage = () => {
-  const BACKENDURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<AuthTab>("login");
 
   const [loginUser, setLoginUser] = useState("");
@@ -30,6 +31,18 @@ const AuthPage = () => {
   const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loginSuccess, setLoginSuccess] = useState("");
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (loginSuccess) {
+      timer = setTimeout(() => {
+        router.push("/Dashboard");
+      }, 1500);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [loginSuccess, router]);
 
   const passwordStrength = useMemo(() => {
     let score = 0;
@@ -63,21 +76,22 @@ const AuthPage = () => {
 
     setIsLoginSubmitting(true);
     try {
-      const response = await axios.post(`${BACKENDURL}/auth/login`, {
-        user: userValue,
+      const response = await BACKENDAPI.post(`/auth/login`, {
+        username: userValue,
         password: loginPass,
         machineLocation: locationValue,
       });
 
       if (response.status >= 200 && response.status < 300) {
+        const token = response.data?.token ?? response.data?.user?.token;
+        if (token) {
+          localStorage.setItem("beanfarm_token", token);
+        }
         setLoginSuccess("Login successful. Redirecting to dashboard...");
       } else {
-        setLoginError(
-          "Unable to sign in. Please verify your credentials and try again.",
-        );
+        setLoginError("Unable to sign in. Please verify your credentials.");
       }
     } catch (error) {
-      console.error("Login request failed", error);
       setLoginError(
         "Sign in failed. Check your connection or backend endpoint.",
       );
@@ -86,24 +100,56 @@ const AuthPage = () => {
     }
   };
 
-  const handleRegister = () => {
-    // placeholder action until backend auth integration
-    console.info("Register payload", {
-      firstName,
-      lastName,
-      email,
-      phone,
-      location,
-      password,
-      confirmPassword,
-    });
+  const handleRegister = async () => {
+    setLoginError("");
+    setLoginSuccess("");
+
+    if (password !== confirmPassword) {
+      setLoginError("Passwords do not match.");
+      return;
+    }
+
+    if (passwordStrength < 75) {
+      setLoginError(
+        "Your password is too weak. Please include numbers, uppercase, and symbols.",
+      );
+      return;
+    }
+
+    setIsLoginSubmitting(true);
+
+    try {
+      const response = await BACKENDAPI.post(`/auth/register`, {
+        firstName,
+        lastName,
+        email,
+        phoneNumber: phone,
+        machine_location: location,
+        password,
+      });
+
+      if (response.status === 201) {
+        const token = response.data?.token ?? response.data?.user?.token;
+        if (token) {
+          localStorage.setItem("beanfarm_token", token);
+        }
+        setLoginSuccess("Registration successful. Redirecting...");
+        router.push("/Dashboard");
+      }
+    } catch (error: string | any) {
+      const serverMessage =
+        error.response?.data?.message || "Registration failed.";
+      setLoginError(serverMessage);
+    } finally {
+      setIsLoginSubmitting(false);
+    }
   };
 
   const handleForgot = async () => {
     {
       let res;
       try {
-        res = await axios.post(`${BACKENDURL}/forgot-password`, {
+        res = await BACKENDAPI.post(`/auth/forgot-password`, {
           email: forgotEmail,
         });
       } catch (error) {
@@ -163,6 +209,9 @@ const AuthPage = () => {
           onConfirmPasswordChange={setConfirmPassword}
           onSubmit={handleRegister}
           onSwitchLogin={() => setActiveTab("login")}
+          isSubmitting={isLoginSubmitting}
+          errorMessage={loginError}
+          successMessage={loginSuccess}
         />
       )}
 

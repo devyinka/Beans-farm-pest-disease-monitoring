@@ -151,10 +151,10 @@ export const RemoteConfiguration = ({
 
   return (
     <section
-      className={`${palette.outerBg} h-full w-full px-4 pb-4 pt-4 xl:max-w-105 xl:justify-self-center`}
+      className={`${palette.outerBg} h-full w-full px-4 pb-0.5 pt-0.5 xl:max-w-105 xl:justify-self-center`}
     >
       <div
-        className={`relative flex h-full min-h-72 flex-col overflow-hidden rounded-2xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_8px_24px_rgba(0,0,0,0.10)]`}
+        className={`relative flex h-full min-h-36 flex-col overflow-hidden rounded-2xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_8px_24px_rgba(0,0,0,0.10)]`}
       >
         <div
           className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl"
@@ -165,13 +165,13 @@ export const RemoteConfiguration = ({
           style={{ backgroundColor: palette.badgeBg, opacity: 0.14 }}
         />
 
-        <header className={`${palette.headerBg} px-4 py-4 sm:px-5`}>
+        <header className={`${palette.headerBg} px-4 py-2 sm:px-5`}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className={`text-lg font-bold ${palette.headerTitle}`}>
+              <h2 className={`text-base font-bold ${palette.headerTitle}`}>
                 Remote Control Deck
               </h2>
-              <p className="mt-1 text-[11px] text-[rgba(255,255,255,0.72)]">
+              <p className="mt-0.5 text-[10px] text-[rgba(255,255,255,0.72)]">
                 ESP32 runtime behavior and AI alert tuning.
               </p>
             </div>
@@ -187,42 +187,42 @@ export const RemoteConfiguration = ({
           </div>
         </header>
 
-        <div className="grid grid-cols-2 gap-2 px-4 pt-4 sm:px-5">
+        <div className="grid grid-cols-2 gap-2 px-4 pt-1.5 sm:px-5">
           <div
-            className="rounded-xl border px-3 py-2"
+            className="rounded-xl border px-2.5 py-1.5"
             style={{ borderColor: palette.selectBorder }}
           >
             <p
-              className={`text-[10px] font-semibold tracking-[0.06em] ${palette.subText}`}
+              className={`text-[9px] font-semibold tracking-[0.06em] ${palette.subText}`}
             >
               ALERT PROFILE
             </p>
-            <p className={`mt-1 text-sm font-bold ${palette.labelText}`}>
+            <p className={`mt-0.5 text-[13px] font-bold ${palette.labelText}`}>
               {confidenceProfile}
             </p>
           </div>
           <div
-            className="rounded-xl border px-3 py-2"
+            className="rounded-xl border px-2.5 py-1.5"
             style={{ borderColor: palette.selectBorder }}
           >
             <p
-              className={`text-[10px] font-semibold tracking-[0.06em] ${palette.subText}`}
+              className={`text-[9px] font-semibold tracking-[0.06em] ${palette.subText}`}
             >
               WAKE MODE
             </p>
-            <p className={`mt-1 text-sm font-bold ${palette.labelText}`}>
+            <p className={`mt-0.5 text-[13px] font-bold ${palette.labelText}`}>
               {wakeProfile}
             </p>
           </div>
         </div>
 
-        <div className="px-4 pt-3 sm:px-5">
+        <div className="px-4 pt-1 sm:px-5">
           <p
-            className={`text-[10px] font-semibold tracking-[0.06em] ${palette.subText}`}
+            className={`text-[9px] font-semibold tracking-[0.06em] ${palette.subText}`}
           >
             QUICK PROFILES
           </p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
             {QUICK_REMOTE_PROFILES.map((profile) => {
               const isActive =
                 aiConfidence === profile.confidence &&
@@ -236,7 +236,7 @@ export const RemoteConfiguration = ({
                     setAiConfidence(profile.confidence);
                     setIntervalMinutes(profile.interval);
                   }}
-                  className="rounded-full px-3 py-1 text-[11px] font-semibold transition-all"
+                  className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold transition-all"
                   style={{
                     backgroundColor: isActive ? palette.badgeBg : "transparent",
                     color: isActive ? palette.badgeText : undefined,
@@ -250,17 +250,17 @@ export const RemoteConfiguration = ({
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-5 p-4 sm:p-5">
+        <div className="flex flex-1 flex-col gap-1.5 p-2 sm:p-2.5">
           <div
-            className="rounded-xl border p-3"
+            className="rounded-xl border p-1.5"
             style={{ borderColor: palette.selectBorder }}
           >
             <label
-              className={`text-xs font-semibold tracking-[0.06em] ${palette.labelText}`}
+              className={`text-[10px] font-semibold tracking-[0.06em] ${palette.labelText}`}
             >
               AI WARNING SENSITIVITY
             </label>
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-2 flex items-center gap-2.5">
               <input
                 type="range"
                 min={50}
@@ -277,23 +277,23 @@ export const RemoteConfiguration = ({
                 }}
               />
               <span
-                className={`w-14 text-right text-sm font-bold ${palette.labelText}`}
+                className={`w-12 text-right text-[13px] font-bold ${palette.labelText}`}
               >
                 {aiConfidence}%
               </span>
             </div>
-            <p className={`mt-2 text-xs ${palette.subText}`}>
+            <p className={`mt-1.5 text-[10px] ${palette.subText}`}>
               Controls how strict AI must be before triggering warning
               workflows.
             </p>
           </div>
 
           <div
-            className="rounded-xl border p-3"
+            className="rounded-xl border p-1.5"
             style={{ borderColor: palette.selectBorder }}
           >
             <label
-              className={`text-xs font-semibold tracking-[0.06em] ${palette.labelText}`}
+              className={`text-[10px] font-semibold tracking-[0.06em] ${palette.labelText}`}
             >
               SENSOR POLLING RATE
             </label>
@@ -302,7 +302,7 @@ export const RemoteConfiguration = ({
               onChange={(event) =>
                 setIntervalMinutes(Number(event.target.value))
               }
-              className={`mt-2 w-full rounded-md border px-3 py-2 text-sm font-medium outline-none ${palette.selectBorder} ${palette.selectText}`}
+              className={`mt-1.5 w-full rounded-md border px-2.5 py-1.5 text-[13px] font-medium outline-none ${palette.selectBorder} ${palette.selectText}`}
             >
               {POLLING_INTERVAL_OPTIONS.map((minutes) => (
                 <option key={minutes} value={minutes}>
@@ -314,12 +314,12 @@ export const RemoteConfiguration = ({
                 </option>
               ))}
             </select>
-            <div className="mt-2 flex items-center justify-between">
-              <p className={`text-xs ${palette.subText}`}>
+            <div className="mt-1.5 flex items-center justify-between">
+              <p className={`text-[10px] ${palette.subText}`}>
                 ESP32 wakes every {pollLabel}.
               </p>
               <span
-                className="rounded-full px-2 py-1 text-[10px] font-semibold"
+                className="rounded-full px-2 py-0.5 text-[9px] font-semibold"
                 style={{
                   backgroundColor: palette.badgeBg,
                   color: palette.badgeText,
@@ -334,7 +334,7 @@ export const RemoteConfiguration = ({
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="mt-auto w-full rounded-xl px-4 py-3 text-sm font-bold tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-auto w-full rounded-xl px-4 py-1.5 text-[13px] font-bold tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-70"
             style={{
               backgroundColor: palette.buttonBg,
               color: palette.buttonText,

@@ -2,9 +2,9 @@ import AuthButton from "./SubmitButton";
 import AuthField from "./AuthField";
 import AuthPanelHeader from "./AuthPanelHeader";
 import type { ForgotPanelProps } from "./types";
-import { useState } from "react";
-import { env } from "process";
-import axios from "axios";
+import { use, useState, useEffect } from "react";
+import BACKENDURL from "@/API";
+import Router from "next/router";
 
 const ForgotPanel = ({
   forgotEmail,
@@ -14,28 +14,58 @@ const ForgotPanel = ({
   onSubmit,
   onBackToLogin,
 }: ForgotPanelProps) => {
-  const BACKENDURL = env.NEXT_PUBLIC_API_URL;
   const [resetCode, onResetCodeChange] = useState("");
   const [resetPassword, onResetPasswordChange] = useState("");
   const [confirmResetPassword, onConfirmResetPasswordChange] = useState("");
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [resetSuccess, setResetSuccess] = useState("");
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+
+    //
+    if (resetSuccess) {
+      timer = setTimeout(() => {
+        Router.push("/dashboard");
+      }, 1500);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [resetSuccess]);
 
   const handleResetpassword = async () => {
     let res;
+    setResetError("");
+    setResetSuccess("");
+
+    // 1. Check Password Match
+    if (resetPassword !== confirmResetPassword) {
+      setResetError("Passwords do not match.");
+      return;
+    }
+    setIsResetSubmitting(true);
+
     try {
-      res = await axios.post(`${BACKENDURL}/auth/reset-password`, {
+      res = await BACKENDURL.post(`${BACKENDURL}/auth/reset-password`, {
         email: forgotEmail,
         resetCode,
         newPassword: resetPassword,
       });
+      if (res.status === 200) {
+        setResetSuccess("Password reset successful. Redirecting...");
+      }
     } catch (error) {
-      console.error("Error resetting password:", error);
+      setResetError("Failed to reset password.");
       return;
     }
     if (res.status === 200) {
-      console.info("Password reset successful");
+      setResetSuccess("Password reset successful. Redirecting...");
       setResetSent(false);
     } else {
-      console.error("Password reset failed:", res.data);
+      setResetError("Password reset failed.");
     }
     // placeholder action until backend reset password integration
     console.info("Reset password payload", {

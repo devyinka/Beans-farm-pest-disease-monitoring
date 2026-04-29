@@ -4,5 +4,7 @@ import { RemoteConfig } from "@/types/type";
 export const remoteConfigDefault: RemoteConfig = {
   aiConfidence: 75,
   sensorPollingRateMinutes: 30,
-  BeanAge: 1,
+  BeanAge: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0],
 };

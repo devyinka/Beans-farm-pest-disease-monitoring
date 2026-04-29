@@ -190,7 +190,7 @@ export type alertHistoryprops = {
 export type RemoteConfigPayload = {
   aiConfidence: number;
   sensorPollingRateMinutes: number;
-  beanAge: number;
+  plantingDate: string;
   updatedAt: string;
 };
 
@@ -201,14 +201,14 @@ export type RemoteTuningPayload = {
 };
 
 export type BeanAgePayload = {
-  beanAge: number;
+  plantingDate: string;
   updatedAt: string;
 };
 
 export type RemoteConfig = {
   aiConfidence: number;
   sensorPollingRateMinutes: number;
-  BeanAge: number;
+  BeanAge: string;
 };
 
 export type RemoteConfigurationProps = {
@@ -220,6 +220,6 @@ export type RemoteConfigurationProps = {
 
 export type BeanAgeConfigurationProps = {
   status: UIStatus;
-  defaultBeanAge?: number;
+  defaultBeanAge?: string;
   onSave?: (payload: BeanAgePayload) => void | Promise<void>;
 };
