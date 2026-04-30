@@ -58,7 +58,8 @@ const DashboardPage = () => {
   const [configIntervalMinutes, setConfigIntervalMinutes] = useState<
     number | null
   >(null);
-  const [clockTick, setClockTick] = useState<number>(Date.now());
+  // Keep the initial render deterministic so SSR and hydration agree.
+  const [clockTick, setClockTick] = useState<number>(0);
 
   // Live values supplied by the socket hook (no mock fallback).
   const { farmData, chartdata, soilchartdata, minutesago, minituesnext } =

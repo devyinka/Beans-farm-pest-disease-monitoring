@@ -77,13 +77,16 @@ const AuthPage = () => {
     setIsLoginSubmitting(true);
     try {
       const response = await BACKENDAPI.post(`/auth/login`, {
-        username: userValue,
+        email: userValue,
         password: loginPass,
-        machineLocation: locationValue,
+        machine_location: locationValue,
       });
 
       if (response.status >= 200 && response.status < 300) {
-        const token = response.data?.token ?? response.data?.user?.token;
+        const token =
+          response.data?.token ??
+          response.data?.data?.token ??
+          response.data?.user?.token;
         if (token) {
           localStorage.setItem("beanfarm_token", token);
         }
@@ -91,10 +94,11 @@ const AuthPage = () => {
       } else {
         setLoginError("Unable to sign in. Please verify your credentials.");
       }
-    } catch (error) {
-      setLoginError(
-        "Sign in failed. Check your connection or backend endpoint.",
-      );
+    } catch (error: string | any) {
+      const serverMessage =
+        error?.response?.data?.message ||
+        "Sign in failed. Check your connection or backend endpoint.";
+      setLoginError(serverMessage);
     } finally {
       setIsLoginSubmitting(false);
     }

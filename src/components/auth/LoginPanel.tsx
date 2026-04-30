@@ -43,8 +43,9 @@ const LoginPanel = ({
       >
         <AuthField
           id="login-user"
+          type="email"
           label="Username or email"
-          placeholder="admin"
+          placeholder="Your email is your Username"
           value={loginUser}
           onChange={onLoginUserChange}
         />
