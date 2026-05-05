@@ -120,6 +120,7 @@ export const SoilLineChart = ({
     ...point,
     timeMs: new Date(point.time).getTime(),
   }));
+  // Alert markers help show when the backend flagged this reading.
   const alertPoints = chartData.filter((point) => point.alert);
 
   // Force X-axis to exactly last 24 hours ending at latest data point.
@@ -185,14 +186,14 @@ export const SoilLineChart = ({
               />
               <YAxis
                 yAxisId="left"
-                domain={[0, 100]}
+                domain={["auto", "auto"]}
                 tick={{ fill: colors.axis1, fontSize: 10 }}
                 label={{ value: "%", angle: -90, position: "insideLeft" }}
               />
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                domain={[0, 14]}
+                domain={["auto", "auto"]}
                 tick={{ fill: colors.axis2, fontSize: 10 }}
                 label={{ value: "pH", angle: 90, position: "insideRight" }}
               />
@@ -204,6 +205,7 @@ export const SoilLineChart = ({
 
               <Legend />
 
+              {/* Soil moisture and pH are drawn on separate axes so the scales do not fight each other. */}
               <Area
                 yAxisId="left"
                 type="natural"

@@ -72,6 +72,18 @@ export type SensorReading = {
   unit: string;
 };
 
+export type RawSensorHistoryRecord = {
+  __id?: number;
+  machine_location: string;
+  temperature: number;
+  humidity: number;
+  rain_level: number;
+  soil_moisture: number;
+  light_level: number;
+  soil_ph: number;
+  timeStamp: string;
+};
+
 export type FarmUpdatePayload = {
   timestamp: string;
   datainterval?: number;

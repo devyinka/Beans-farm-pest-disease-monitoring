@@ -120,6 +120,7 @@ export const ClimateLineChart = ({
     ...point,
     timeMs: new Date(point.time).getTime(),
   }));
+  // Alerts are drawn as dots so you can spot bad readings without changing the line itself.
   const alertPoints = chartData.filter((point) => point.alert);
 
   // Force X-axis to exactly last 24 hours ending at latest data point.
@@ -185,14 +186,14 @@ export const ClimateLineChart = ({
               />
               <YAxis
                 yAxisId="left"
-                domain={[0, 70]}
+                domain={["auto", "auto"]}
                 tick={{ fill: colors.axis1, fontSize: 10 }}
                 label={{ value: "°C", angle: -90, position: "insideLeft" }}
               />
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                domain={[0, 100]}
+                domain={["auto", "auto"]}
                 tick={{ fill: colors.axis2, fontSize: 10 }}
                 label={{ value: "%", angle: 90, position: "insideRight" }}
               />
@@ -203,6 +204,7 @@ export const ClimateLineChart = ({
               />
               <Legend />
 
+              {/* Temperature stays as the solid line; humidity is shown separately to keep the chart readable. */}
               <Area
                 yAxisId="left"
                 type="natural"
