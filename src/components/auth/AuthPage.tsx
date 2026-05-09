@@ -5,12 +5,16 @@ import ForgotPanel from "./ForgotPanel";
 import LoginPanel from "./LoginPanel";
 import RegisterPanel from "./RegisterPanel";
 import { useRouter } from "next/navigation";
+import { useUserLoginContext } from "@/context/userLogincontex";
+
 import BACKENDAPI from "@/API";
 
 import type { AuthTab } from "./types";
 
 const AuthPage = () => {
   const router = useRouter();
+  const { setIsLoggedIn, setUserProfile } = useUserLoginContext();
+
   const [activeTab, setActiveTab] = useState<AuthTab>("login");
 
   const [loginUser, setLoginUser] = useState("");
@@ -83,18 +87,35 @@ const AuthPage = () => {
       });
 
       if (response.status >= 200 && response.status < 300) {
-        const token =
-          response.data?.token ??
-          response.data?.data?.token ??
-          response.data?.user?.token;
+        // Safely extract token, mirroring your register logic
+        const token = response.data?.token ?? response.data?.user?.token;
         if (token) {
           localStorage.setItem("beanfarm_token", token);
         }
+        localStorage.setItem("beanfarm_machine_location", locationValue);
         setLoginSuccess("Login successful. Redirecting to dashboard...");
+
+        setIsLoggedIn(true);
+
+        // Check for either data or user objects to prevent crashes
+        const userData = response.data?.user || response.data?.data;
+
+        if (userData) {
+          setUserProfile({
+            machineLocation: userData.machine_location || locationValue,
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+            email: userData.email || "",
+            phone: userData.phoneNumber || "",
+          });
+        }
       } else {
         setLoginError("Unable to sign in. Please verify your credentials.");
       }
     } catch (error: string | any) {
+      // ADD THIS CONSOLE LOG to see exact JS errors in your browser console!
+      console.error("Login Error Breakdown:", error);
+
       const serverMessage =
         error?.response?.data?.message ||
         "Sign in failed. Check your connection or backend endpoint.";
@@ -136,7 +157,16 @@ const AuthPage = () => {
         const token = response.data?.token ?? response.data?.user?.token;
         if (token) {
           localStorage.setItem("beanfarm_token", token);
+          setIsLoggedIn(true);
+          setUserProfile({
+            machineLocation: location,
+            firstName,
+            lastName,
+            email,
+            phone,
+          });
         }
+        localStorage.setItem("beanfarm_machine_location", location);
         setLoginSuccess("Registration successful. Redirecting...");
         router.push("/Dashboard");
       }
@@ -164,7 +194,7 @@ const AuthPage = () => {
         setResetSent(true);
       }
     }
-    setResetSent(true); //for testing
+    // setResetSent(true); //for testing
   };
   return (
     <div className="flex w-full flex-col bg-[linear-gradient(180deg,rgba(20,10,34,0.86)_0%,rgba(33,14,57,0.72)_100%)] px-6 py-10 backdrop-blur-[6px] lg:px-9">

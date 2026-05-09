@@ -14,24 +14,45 @@ import {
 } from "recharts";
 import type { ClimateLineChartProps, ChartColorScheme } from "@/types/type";
 
-const HOUR_MS = 60 * 60 * 1000;
+// const HOUR_MS = 60 * 60 * 1000;
 
 const formatTime = (value: string | number) => {
-  const date = new Date(value);
+  const date = new Date(Number(value));
   return date.toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
 };
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const cleanPayload = payload.filter((entry: any) =>
+      ["Temperature", "Humidity", "Soil Moisture"].includes(entry.name),
+    );
 
-const tooltipLabel = (label: unknown) => formatTime(String(label ?? ""));
+    return (
+      <div className="rounded-xl border border-[#d5dccd] bg-white/95 p-3 shadow-[0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-sm">
+        <p className="mb-2 border-b border-gray-100 pb-1 text-xs font-semibold text-gray-500">
+          {formatTime(label)}
+        </p>
 
-const tooltipValue = (value: unknown, name: unknown) => {
-  const numericValue = typeof value === "number" ? value : Number(value ?? 0);
-  const seriesName = String(name ?? "");
-  if (seriesName === "Temperature")
-    return [`${numericValue.toFixed(0)} °C`, seriesName] as [string, string];
-  return [`${numericValue.toFixed(0)} %`, seriesName] as [string, string];
+        {/* We map over 'cleanPayload' instead of the raw 'payload' */}
+        {cleanPayload.map((entry: any, index: number) => (
+          <div
+            key={`tooltip-item-${index}`}
+            className="flex items-center justify-between gap-4 py-0.5 text-sm font-bold"
+            style={{ color: entry.color }}
+          >
+            <span>{entry.name}:</span>
+            <span>
+              {entry.value?.toFixed(0)}{" "}
+              {entry.name === "Temperature" ? "°C" : "%"}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
 };
 
 const getChartColorScheme = (
@@ -41,8 +62,10 @@ const getChartColorScheme = (
     healthy: {
       line1: "#2f7f3a",
       line2: "#3f9a4e",
+      line3: "#66a064",
       area1: "#2f7f3a",
       area2: "#3f9a4e",
+      area3: "#66a064",
       axis1: "#2f7f3a",
       axis2: "#3f9a4e",
       grid: "#dbe2d3",
@@ -51,8 +74,10 @@ const getChartColorScheme = (
     disease: {
       line1: "#4f98ff",
       line2: "#2f5fb5",
+      line3: "#73a5ff",
       area1: "#4f98ff",
       area2: "#2f5fb5",
+      area3: "#73a5ff",
       axis1: "#4f98ff",
       axis2: "#2f5fb5",
       grid: "#c7d3eb",
@@ -61,8 +86,10 @@ const getChartColorScheme = (
     pest: {
       line1: "#f59e0b",
       line2: "#ea580c",
+      line3: "#f5b74b",
       area1: "#f59e0b",
       area2: "#ea580c",
+      area3: "#f5b74b",
       axis1: "#f59e0b",
       axis2: "#ea580c",
       grid: "#fed7aa",
@@ -110,38 +137,32 @@ export const ClimateLineChart = ({
   isConnected,
   status,
   dataSourceLabel,
+  isLoading = false,
 }: ClimateLineChartProps) => {
-  // Color set is driven by live AI status (healthy/disease/pest).
   const colors = getChartColorScheme(status);
   const surface = getSurfaceScheme(status);
 
-  // Build numeric timestamps for precise time-axis rendering.
-  const chartData = data.map((point) => ({
-    ...point,
-    timeMs: new Date(point.time).getTime(),
-  }));
-  // Alerts are drawn as dots so you can spot bad readings without changing the line itself.
-  const alertPoints = chartData.filter((point) => point.alert);
+  const chartData = data
+    .map((point) => {
+      const rawDate = point.timeStamp;
+      return {
+        ...point,
+        timeMs: rawDate ? new Date(rawDate).getTime() : Date.now(),
+      };
+    })
+    .sort((a, b) => a.timeMs - b.timeMs)
+    .filter((point) => !isNaN(point.timeMs));
 
-  // Force X-axis to exactly last 24 hours ending at latest data point.
-  const latestTimeMs =
-    chartData.length > 0
-      ? Math.max(...chartData.map((point) => point.timeMs))
-      : Date.now();
-  const axisStartMs = latestTimeMs - 24 * HOUR_MS;
-  const axisTicks = Array.from(
-    { length: 13 },
-    (_, index) => axisStartMs + index * 2 * HOUR_MS,
-  );
+  const alertPoints = chartData.filter((point) => point.alert);
 
   return (
     <section className={`${surface.sectionBg} px-4 pb-4 pt-4 sm:px-6`}>
       <div
-        className={`rounded-xl border ${surface.border} ${surface.cardBg} p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]`}
+        className={`rounded-2xl border ${surface.border} ${surface.cardBg} p-4 shadow-[0_10px_28px_rgba(0,0,0,0.08)]`}
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h3 className={`text-sm font-bold ${surface.title}`}>
-            Temperature & Humidity — last 24 hrs
+            Environment (Temperature, Humidity, Soil)
           </h3>
 
           <span
@@ -157,110 +178,154 @@ export const ClimateLineChart = ({
           </span>
         </div>
 
-        {/* {data.length === 0 ? (
-          <div className="flex h-72.5 w-full items-center justify-center rounded-lg border border-dashed border-[#c7ced8] bg-white/60">
-            <p className="text-sm font-medium text-[#5b6678]">
-              Waiting for backend chart points (Socket.IO farmupdate)...
-            </p>
-          </div>
-        ) : ( */}
-        <div className="h-72.5 w-full">
-          <ResponsiveContainer width="100%" height="120%">
-            <AreaChart
-              data={chartData}
-              margin={{ top: 40, right: 4, left: 5, bottom: 5 }}
-            >
-              <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" />
-              <XAxis
-                type="number"
-                dataKey="timeMs"
-                domain={[axisStartMs, latestTimeMs]}
-                ticks={axisTicks}
-                tickFormatter={formatTime}
-                label={{
-                  value: "Time (last 24h)",
-                  position: "insideBottomRight",
-                  offset: -5,
-                }}
-                tick={{ fill: colors.tick, fontSize: 8 }}
-              />
-              <YAxis
-                yAxisId="left"
-                domain={["auto", "auto"]}
-                tick={{ fill: colors.axis1, fontSize: 10 }}
-                label={{ value: "°C", angle: -90, position: "insideLeft" }}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                domain={["auto", "auto"]}
-                tick={{ fill: colors.axis2, fontSize: 10 }}
-                label={{ value: "%", angle: 90, position: "insideRight" }}
-              />
-              <Tooltip
-                labelFormatter={tooltipLabel}
-                formatter={tooltipValue}
-                contentStyle={{ borderRadius: 20, borderColor: "#d5dccd" }}
-              />
-              <Legend />
+        <div className="h-96 w-full sm:h-105">
+          {isLoading && data.length === 0 ? (
+            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-[#c7ced8] bg-white/60 px-4 text-center">
+              <div>
+                <p className="text-sm font-semibold text-[#465163]">
+                  Loading history...
+                </p>
+                <p className="mt-1 text-xs text-[#6a7586]">
+                  Fetching database readings before live updates continue.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={chartData}
+                margin={{ top: 24, right: 8, left: -16, bottom: 4 }}
+              >
+                <defs>
+                  <linearGradient id="tempFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor={colors.area1}
+                      stopOpacity={0.28}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={colors.area1}
+                      stopOpacity={0.03}
+                    />
+                  </linearGradient>
+                  <linearGradient id="humFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor={colors.area2}
+                      stopOpacity={0.28}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={colors.area2}
+                      stopOpacity={0.03}
+                    />
+                  </linearGradient>
+                  <linearGradient id="soilFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor={colors.area3}
+                      stopOpacity={0.28}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={colors.area3}
+                      stopOpacity={0.03}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" />
 
-              {/* Temperature stays as the solid line; humidity is shown separately to keep the chart readable. */}
-              <Area
-                yAxisId="left"
-                type="natural"
-                dataKey="temp"
-                name="Temperature"
-                fill={colors.area1}
-                fillOpacity={0.06}
-                stroke="none"
-              />
-
-              <Line
-                yAxisId="left"
-                type="natural"
-                dataKey="temp"
-                name="Temperature"
-                stroke={colors.line1}
-                strokeWidth={2.4}
-                dot={false}
-                activeDot={{ radius: 1 }}
-              />
-
-              <Area
-                yAxisId="right"
-                type="natural"
-                dataKey="hum"
-                name="Humidity"
-                fill={colors.area2}
-                fillOpacity={0.06}
-                stroke="none"
-              />
-
-              <Line
-                yAxisId="right"
-                type="natural"
-                dataKey="hum"
-                name="Humidity"
-                stroke={colors.line2}
-                strokeWidth={2.4}
-                dot={false}
-                activeDot={{ r: 4 }}
-              />
-
-              {alertPoints.map((point, index) => (
-                <ReferenceDot
-                  key={`alert-dot-${index}`}
-                  x={point.timeMs}
-                  yAxisId="right"
-                  y={point.hum}
-                  r={4}
-                  fill="#f97316"
-                  stroke="#ffffff"
-                  strokeWidth={0.5}
+                <XAxis
+                  type="number"
+                  dataKey="timeMs"
+                  domain={["dataMin", "dataMax"]}
+                  tickFormatter={formatTime}
+                  minTickGap={30}
+                  tick={{ fill: colors.tick, fontSize: 10 }}
                 />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
+
+                {/* Single, clean Y-Axis for everything */}
+                <YAxis
+                  domain={["auto", "auto"]}
+                  tick={{ fill: colors.axis1, fontSize: 10 }}
+                />
+
+                <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{ stroke: colors.grid, strokeWidth: 2 }}
+                />
+
+                <Legend verticalAlign="top" height={24} iconType="circle" />
+
+                <Area
+                  type="monotone"
+                  dataKey="temp"
+                  fill="url(#tempFill)"
+                  stroke="none"
+                  legendType="none"
+                  tooltipType="none"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="temp"
+                  name="Temperature"
+                  stroke={colors.line1}
+                  strokeWidth={1.5}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0 }}
+                />
+
+                <Area
+                  type="monotone"
+                  dataKey="hum"
+                  fill="url(#humFill)"
+                  stroke="none"
+                  legendType="none"
+                  tooltipType="none"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="hum"
+                  name="Humidity"
+                  stroke={colors.line2}
+                  strokeWidth={1.5}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0 }}
+                />
+
+                <Area
+                  type="monotone"
+                  dataKey="soil"
+                  fill="url(#soilFill)"
+                  stroke="none"
+                  legendType="none"
+                  tooltipType="none"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="soil"
+                  name="Soil Moisture"
+                  stroke={colors.line3}
+                  strokeWidth={1.5}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0 }}
+                />
+
+                {alertPoints.map((point, index) => (
+                  <ReferenceDot
+                    key={`alert-dot-${index}`}
+                    x={point.timeMs}
+                    y={point.hum}
+                    r={5}
+                    fill="#ef4444"
+                    stroke="#ffffff"
+                    strokeWidth={2}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </section>

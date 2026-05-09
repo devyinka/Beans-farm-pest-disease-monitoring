@@ -7,21 +7,18 @@ import { useFarmData } from "@/hook/useFarmData";
 import { useAlertHistory } from "@/hook/useAlertHistory";
 
 import { mockDisease, mockHealthy, mockPest } from "@/Mock/Mockdata";
-import { alertHistoryMock } from "@/Mock/Alertmock";
 import { remoteConfigDefault } from "@/Mock/RemoteConfig";
 
 import {
   ChartDataSourceLabel,
-  ClimateChartPoint,
-  SoilChartPoint,
   FarmUpdatePayload,
   BeanAgePayload,
   RemoteTuningPayload,
   RemoteConfig,
   UIStatus,
+  ThresholdPayload,
 } from "@/types/type";
 import ClimateLineChart from "@/components/Dashboard/ClimateLineChart";
-import SoilLineChart from "@/components/Dashboard/SoilLineChart";
 import {
   AlertStrip,
   Header,
@@ -33,15 +30,13 @@ import { Solution } from "@/components/Dashboard/Solution";
 import { Alerthistory } from "@/components/Dashboard/Alerthistory";
 import { RemoteConfiguration } from "@/components/Dashboard/RemoteConfiguration";
 import { BeanAgeConfiguration } from "@/components/Dashboard/BeanAgeConfiguration";
+import { ThresholdConfiguration } from "@/components/Dashboard/ThresholdConfiguration";
 import axios from "axios";
-// Helper to extract specific sensor values from the farm data payload
-const getSensorValue = (
-  sensors: Array<{ id: string; value: number }>,
-  sensorId: string,
-  fallback = 0,
-) => {
-  const sensor = sensors.find((entry) => entry.id === sensorId);
-  return typeof sensor?.value === "number" ? sensor.value : fallback;
+
+const getStoredMachineLocation = (): string => {
+  if (typeof window === "undefined") return "";
+
+  return localStorage.getItem("beanfarm_machine_location")?.trim() ?? "";
 };
 
 // Main dashboard page component
@@ -53,6 +48,14 @@ const DashboardPage = () => {
   const [remoteConfig, setRemoteConfig] =
     useState<RemoteConfig>(remoteConfigDefault);
 
+  const [thresholdConfig, setThresholdConfig] = useState<ThresholdPayload>({
+    luxThreshold: 5000,
+    hotDayTempThreshold: 35,
+    wetNightHumThreshold: 85,
+    drySoilThreshold: 20,
+    floodedSoilThreshold: 80,
+  });
+
   // Local header timing override used after remote configuration is successfully saved.
   const [configAppliedAt, setConfigAppliedAt] = useState<number | null>(null);
   const [configIntervalMinutes, setConfigIntervalMinutes] = useState<
@@ -62,14 +65,24 @@ const DashboardPage = () => {
   const [clockTick, setClockTick] = useState<number>(0);
 
   // Live values supplied by the socket hook (no mock fallback).
-  const { farmData, chartdata, soilchartdata, minutesago, minituesnext } =
+  const { farmData, chartdata, minutesago, minituesnext, isHistoryLoading } =
     useFarmData();
 
-  const { alertHistory, fetchAlertHistory } = useAlertHistory();
+  const {
+    alertHistory,
+    fetchAlertHistory,
+    isLoading: isAlertHistoryLoading,
+  } = useAlertHistory();
+
+  const [seedLocation] = useState<string>(getStoredMachineLocation);
+
+  const machineLocation = farmData?.farmInfo?.name?.trim() || seedLocation;
 
   useEffect(() => {
-    fetchAlertHistory();
-  }, [fetchAlertHistory]);
+    if (!machineLocation) return;
+
+    void fetchAlertHistory(machineLocation);
+  }, [fetchAlertHistory, machineLocation]);
 
   useEffect(() => {
     if (configAppliedAt === null || configIntervalMinutes === null) return;
@@ -81,41 +94,41 @@ const DashboardPage = () => {
     return () => clearInterval(timer);
   }, [configAppliedAt, configIntervalMinutes]);
 
+  if (!farmData) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <p className="text-gray-500 font-semibold">Loading farm data...</p>
+      </div>
+    );
+  }
+
   // Determine if we have live data or should fall back to mock for initial display.
   const hasLiveData = farmData !== null;
-  const dashboardData = (farmData ?? mockHealthy) as FarmUpdatePayload;
+  const dashboardData = farmData as FarmUpdatePayload;
 
-  const status = (dashboardData.AIData.ui_status as UIStatus) ?? "healthy";
+  //  Create "safe" versions of the data that provide defaults if any fields are missing. This ensures the UI can render without errors even if some data is not yet available from the backend.
+  const safeAIData = {
+    ui_status: dashboardData?.AIData?.ui_status ?? "healthy",
+    ui_title: dashboardData?.AIData?.ui_title ?? "Monitoring...",
+    confidence: dashboardData?.AIData?.confidence ?? 0,
+    description: dashboardData?.AIData?.description ?? "Fetching analysis...",
+    spray_action: dashboardData?.AIData?.spray_action ?? "N/A",
+    sms_alert_sent: dashboardData?.AIData?.sms_alert_sent ?? false,
+  };
+
+  const safeLocationName =
+    dashboardData?.farmInfo?.name ?? seedLocation ?? "Unknown Farm";
+
+  const status = (safeAIData.ui_status as UIStatus) ?? "healthy";
   const ui = STATUS_STYLES[status] ?? STATUS_STYLES.healthy;
 
-  // Seed data points for charts to ensure they render even if live data hasn't arrived yet.
-  const climateSeed: ClimateChartPoint = {
-    time: dashboardData.timestamp,
-    temp: getSensorValue(dashboardData.sensors, "temp"),
-    hum: getSensorValue(dashboardData.sensors, "hum"),
-    alert:
-      dashboardData.AIData.sms_alert_sent ||
-      dashboardData.AIData.ui_status !== "healthy",
-    status,
-  };
-  // For soil chart, we also want to include pH as a key metric, so we create a separate seed point.
-  const soilSeed: SoilChartPoint = {
-    time: dashboardData.timestamp,
-    soil: getSensorValue(dashboardData.sensors, "soil"),
-    ph: getSensorValue(dashboardData.sensors, "ph"),
-    alert:
-      dashboardData.AIData.sms_alert_sent ||
-      dashboardData.AIData.ui_status !== "healthy",
-    status,
-  };
-  // Use live chart data if available, otherwise use the seed point to render an initial chart.
-  const climateChartData = chartdata.length ? chartdata : [climateSeed];
-  const soilChartData = soilchartdata.length ? soilchartdata : [soilSeed];
+  // Chart series now come from backend raw history first, then grow with live socket updates.
+  const climateChartData = chartdata;
 
   // Data source badge for chart headers.
   const dataSourceLabel: ChartDataSourceLabel = hasLiveData
     ? "LIVE STREAM"
-    : "MOCK SEED";
+    : "SENSOR HISTORY";
 
   const hasConfigTimingOverride =
     configAppliedAt !== null && configIntervalMinutes !== null;
@@ -182,6 +195,20 @@ const DashboardPage = () => {
     }
   };
 
+  const handleThresholdSave = async (payload: ThresholdPayload) => {
+    try {
+      const response = await axios.post(
+        `${BACKENDURL}/api/device-config/thresholds`,
+        payload,
+      );
+      console.log("Thresholds saved successfully:", response.data);
+      setThresholdConfig(payload);
+    } catch (error) {
+      console.error("Failed to save thresholds:", error);
+      setThresholdConfig(payload);
+    }
+  };
+
   return (
     <div>
       <TopNav
@@ -194,7 +221,7 @@ const DashboardPage = () => {
       <div className={`${ui.dividerBg} py-4`}></div>
 
       <Header
-        description={dashboardData.farmInfo.name}
+        description={safeLocationName}
         theme={ui.headerTheme}
         dotColor={ui.dotColor}
         titleColor={ui.headerTitleColor}
@@ -205,10 +232,10 @@ const DashboardPage = () => {
 
       <FarmstatusBox
         imageurl={ui.image}
-        AIconfidence={Math.round(dashboardData.AIData.confidence)}
+        AIconfidence={Math.round(safeAIData.confidence)}
         statusLabel={ui.statusLabel}
-        Title={dashboardData.AIData.ui_title}
-        subtitle={dashboardData.AIData.description}
+        Title={safeAIData.ui_title}
+        subtitle={safeAIData.description}
         backgroundClass={ui.bodyBg}
         statusColor={ui.statusColor}
         titleColor={ui.titleColor}
@@ -219,8 +246,8 @@ const DashboardPage = () => {
       />
 
       <AlertStrip
-        sprayAction={dashboardData.AIData.spray_action}
-        smsAlertSent={dashboardData.AIData.sms_alert_sent}
+        sprayAction={safeAIData.spray_action}
+        smsAlertSent={safeAIData.sms_alert_sent}
         alertStripBg={ui.alertStripBg}
         alertTextColor={ui.alertTextColor}
         alertBadgeBg={ui.alertBadgeBg}
@@ -228,7 +255,7 @@ const DashboardPage = () => {
       />
 
       <SensorGrid
-        sensors={dashboardData.sensors}
+        sensors={dashboardData?.sensors ?? []}
         status={status}
         sectionBg={ui.sensorSectionBg}
         cardBg={ui.sensorCardBg}
@@ -242,12 +269,7 @@ const DashboardPage = () => {
         isConnected={isConnected}
         status={status}
         dataSourceLabel={dataSourceLabel}
-      />
-      <SoilLineChart
-        data={soilChartData}
-        isConnected={isConnected}
-        status={status}
-        dataSourceLabel={dataSourceLabel}
+        isLoading={isHistoryLoading && climateChartData.length === 0}
       />
       <section className="bg-[#f9f9f9] p-4">
         <h3 className="mb-3 text-sm font-bold tracking-[0.08em] text-[#5c6672] uppercase">
@@ -256,8 +278,9 @@ const DashboardPage = () => {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
           <Solution farmData={dashboardData} status={status} />
           <Alerthistory
-            AlertHistory={alertHistory.length ? alertHistory : alertHistoryMock}
+            AlertHistory={alertHistory}
             status={status}
+            isLoading={isAlertHistoryLoading}
           />
         </div>
       </section>
@@ -273,7 +296,7 @@ const DashboardPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols- gap-4 md:grid-cols-2 md:items-stretch">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
           <RemoteConfiguration
             status={status}
             defaultConfidence={remoteConfig.aiConfidence}
@@ -284,6 +307,14 @@ const DashboardPage = () => {
             status={status}
             defaultBeanAge={remoteConfig.BeanAge}
             onSave={handleBeanAgeSave}
+          />
+        </div>
+
+        <div className="mt-4">
+          <ThresholdConfiguration
+            status={status}
+            defaultThresholds={thresholdConfig}
+            onSave={handleThresholdSave}
           />
         </div>
       </section>

@@ -71,6 +71,14 @@ export const Solution = ({ farmData, status }: solutionProps) => {
   const actionLabel = getActionLabel(status);
   const palette = getSolutionPalette(status);
 
+  const safeAIData = {
+    spray_action: farmData?.AIData?.spray_action ?? "Awaiting Action...",
+    description:
+      farmData?.AIData?.description ??
+      "Fetching latest environmental analysis...",
+    confidence: farmData?.AIData?.confidence ?? 0,
+  };
+
   return (
     <section
       className={`${palette.outerBg} h-full w-full px-4 pb-4 pt-4 xl:max-w-105 xl:justify-self-center`}
@@ -87,14 +95,14 @@ export const Solution = ({ farmData, status }: solutionProps) => {
 
         {/* Title from AI */}
         <h2 className={`mb-2 text-xl font-bold ${palette.titleColor}`}>
-          {farmData.AIData.spray_action}
+          {safeAIData.spray_action}
         </h2>
 
         {/* Description from AI */}
         <p
           className={`mb-4 text-sm leading-relaxed ${palette.descriptionColor}`}
         >
-          {farmData.AIData.description}
+          {safeAIData.description}
         </p>
 
         {/* Confidence Footer */}
@@ -102,7 +110,7 @@ export const Solution = ({ farmData, status }: solutionProps) => {
           <div className="flex items-center justify-between text-xs font-semibold">
             <span className={palette.metaColor}>ML confidence</span>
             <span style={{ color: palette.labelText }}>
-              {Math.round(farmData.AIData.confidence)}%
+              {Math.round(safeAIData.confidence)}%
             </span>
           </div>
           <div
@@ -112,7 +120,7 @@ export const Solution = ({ farmData, status }: solutionProps) => {
             <div
               className="h-full rounded-full"
               style={{
-                width: `${farmData.AIData.confidence}%`,
+                width: `${safeAIData.confidence}%`,
                 backgroundColor: palette.progressFill,
               }}
             ></div>

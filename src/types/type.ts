@@ -66,7 +66,7 @@ export interface sensorGrid {
 }
 
 export type SensorReading = {
-  id: "temp" | "hum" | "rain" | "soil" | "light" | "ph" | string;
+  id: "temp" | "hum" | "rain" | "soil" | "light" | string;
   label: string;
   value: number;
   unit: string;
@@ -80,7 +80,6 @@ export type RawSensorHistoryRecord = {
   rain_level: number;
   soil_moisture: number;
   light_level: number;
-  soil_ph: number;
   timeStamp: string;
 };
 
@@ -103,7 +102,7 @@ export type FarmUpdatePayload = {
 };
 
 export type BaseChartPoint = {
-  time: string;
+  timeStamp: string;
   alert: boolean;
   status: FarmUpdatePayload["AIData"]["ui_status"];
 };
@@ -111,23 +110,24 @@ export type BaseChartPoint = {
 export type ClimateChartPoint = BaseChartPoint & {
   temp: number;
   hum: number;
+  soil: number;
 };
 
 // Backward-compatible alias (prefer ClimateChartPoint for new code).
 export type FarmChartPoint = ClimateChartPoint;
 
-export type ChartDataSourceLabel = "LIVE STREAM" | "MOCK SEED";
+export type ChartDataSourceLabel = "LIVE STREAM" | "SENSOR HISTORY";
 
 export type ClimateLineChartProps = {
   data: ClimateChartPoint[];
   isConnected: boolean;
   status: "healthy" | "disease" | "pest";
   dataSourceLabel: ChartDataSourceLabel;
+  isLoading?: boolean;
 };
 
 export type SoilChartPoint = BaseChartPoint & {
   soil: number;
-  ph: number;
 };
 
 export type SoilLineChartProps = {
@@ -135,15 +135,19 @@ export type SoilLineChartProps = {
   isConnected: boolean;
   status: "healthy" | "disease" | "pest";
   dataSourceLabel: ChartDataSourceLabel;
+  isLoading?: boolean;
 };
 
 export type ChartColorScheme = {
   line1: string;
   line2: string;
+  line3?: string;
   area1: string;
   area2: string;
+  area3?: string;
   axis1: string;
   axis2: string;
+  axis3?: string;
   grid: string;
   tick: string;
 };
@@ -197,6 +201,7 @@ export type solutionProps = {
 export type alertHistoryprops = {
   AlertHistory: AlertHistoryItem[];
   status: UIStatus;
+  isLoading?: boolean;
 };
 
 export type RemoteConfigPayload = {
@@ -235,3 +240,25 @@ export type BeanAgeConfigurationProps = {
   defaultBeanAge?: string;
   onSave?: (payload: BeanAgePayload) => void | Promise<void>;
 };
+
+export type ThresholdPayload = {
+  luxThreshold: number;
+  hotDayTempThreshold: number;
+  wetNightHumThreshold: number;
+  drySoilThreshold: number;
+  floodedSoilThreshold: number;
+};
+
+export type ThresholdConfigurationProps = {
+  status: UIStatus;
+  defaultThresholds?: ThresholdPayload;
+  onSave?: (payload: ThresholdPayload) => void | Promise<void>;
+};
+
+export interface UserProfile {
+  machineLocation: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}

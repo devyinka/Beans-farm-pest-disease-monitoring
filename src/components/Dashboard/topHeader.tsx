@@ -141,6 +141,14 @@ const getSensorHint = (
 };
 
 const getSensorDisplayValue = (sensor: SensorItem) => {
+  if (
+    sensor.value === undefined ||
+    sensor.value === null ||
+    Number.isNaN(sensor.value)
+  ) {
+    return "N/A";
+  }
+
   if (sensor.id === "rain") {
     return sensor.value > 0 ? "Yes" : "No";
   }
@@ -148,8 +156,7 @@ const getSensorDisplayValue = (sensor: SensorItem) => {
   if (Number.isInteger(sensor.value)) {
     return sensor.value.toString();
   }
-
-  return sensor.value.toFixed(1);
+  return Number(sensor.value).toFixed(1);
 };
 
 export const SensorGrid = ({

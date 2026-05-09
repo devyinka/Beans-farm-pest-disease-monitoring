@@ -58,7 +58,11 @@ const getAlertPalette = (status: UIStatus) => {
   return palettes[status];
 };
 
-export const Alerthistory = ({ AlertHistory, status }: alertHistoryprops) => {
+export const Alerthistory = ({
+  AlertHistory,
+  status,
+  isLoading,
+}: alertHistoryprops) => {
   const ui = STATUS_STYLES[status] ?? STATUS_STYLES.healthy;
   const palette = getAlertPalette(status);
 
@@ -100,10 +104,10 @@ export const Alerthistory = ({ AlertHistory, status }: alertHistoryprops) => {
 
   return (
     <section
-      className={`${palette.outerBg} w-full px-4 pb-4 pt-4 xl:max-w-105 xl:justify-self-center`}
+      className={`${palette.outerBg} h-full w-full px-4 pb-4 pt-4 xl:max-w-105 xl:justify-self-center`}
     >
       <div
-        className={`overflow-hidden rounded-xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_2px_8px_rgba(0,0,0,0.08)]`}
+        className={`flex h-full min-h-72 flex-col overflow-hidden rounded-xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_2px_8px_rgba(0,0,0,0.08)]`}
       >
         <div className={`${palette.headerBg} px-4 py-3 sm:px-5`}>
           <div className="flex items-center justify-between gap-3">
@@ -123,28 +127,44 @@ export const Alerthistory = ({ AlertHistory, status }: alertHistoryprops) => {
         </div>
 
         {/* Keep the history scrollable inside the card without stretching the dashboard. */}
-        <div className={`max-h-72 overflow-y-auto divide-y ${palette.divider}`}>
-          {AlertHistory.map((alert: AlertHistoryItem, index) => {
-            const item = getItemStyles(alert.status);
-            return (
-              <div
-                key={`${alert.timestamp}-${index}`}
-                className="flex items-start gap-3 px-4 py-4 sm:px-5"
-              >
-                <span className={`mt-1 h-2.5 w-2.5 rounded-full ${item.dot}`} />
-                <div className="min-w-0 flex-1">
-                  <div className={`text-sm font-semibold ${palette.rowTitle}`}>
-                    {alert.farmstatus}
-                  </div>
-                  <div className={`text-xs ${palette.rowMeta}`}>
-                    {formatTime(alert.timestamp)}
-                    <span className="mx-1">—</span>
-                    {alert.smsAlertSent ? "SMS ✓" : "no SMS sent"}
+        <div
+          className={`flex flex-1 flex-col overflow-y-auto divide-y ${palette.divider}`}
+        >
+          {isLoading ? (
+            <div className="flex flex-1 items-center justify-center px-4 py-6 text-center text-sm text-[#b7d3bc] sm:px-5">
+              Loading alert history...
+            </div>
+          ) : AlertHistory.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center px-4 py-6 text-center text-sm text-[#b7d3bc] sm:px-5">
+              No alert history yet.
+            </div>
+          ) : (
+            AlertHistory.map((alert: AlertHistoryItem, index) => {
+              const item = getItemStyles(alert.status);
+              return (
+                <div
+                  key={`${alert.timestamp}-${index}`}
+                  className="flex items-start gap-3 px-4 py-4 sm:px-5"
+                >
+                  <span
+                    className={`mt-1 h-2.5 w-2.5 rounded-full ${item.dot}`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className={`text-sm font-semibold ${palette.rowTitle}`}
+                    >
+                      {alert.farmstatus}
+                    </div>
+                    <div className={`text-xs ${palette.rowMeta}`}>
+                      {formatTime(alert.timestamp)}
+                      <span className="mx-1">—</span>
+                      {alert.smsAlertSent ? "SMS ✓" : "no SMS sent"}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
     </section>

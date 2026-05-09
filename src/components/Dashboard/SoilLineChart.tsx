@@ -110,6 +110,7 @@ export const SoilLineChart = ({
   isConnected,
   status,
   dataSourceLabel,
+  isLoading = false,
 }: SoilLineChartProps) => {
   // Color set is driven by live AI status (healthy/disease/pest).
   const colors = getChartColorScheme(status);
@@ -118,7 +119,7 @@ export const SoilLineChart = ({
   // Build numeric timestamps for precise time-axis rendering.
   const chartData = data.map((point) => ({
     ...point,
-    timeMs: new Date(point.time).getTime(),
+    timeMs: new Date(point.timeStamp).getTime(),
   }));
   // Alert markers help show when the backend flagged this reading.
   const alertPoints = chartData.filter((point) => point.alert);
@@ -137,7 +138,7 @@ export const SoilLineChart = ({
   return (
     <section className={`${surface.sectionBg} px-4 pb-4 pt-4 sm:px-6`}>
       <div
-        className={`rounded-xl border ${surface.border} ${surface.cardBg} p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]`}
+        className={`rounded-2xl border ${surface.border} ${surface.cardBg} p-4 shadow-[0_10px_28px_rgba(0,0,0,0.08)]`}
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3 pb-3">
           <h3 className={`text-sm font-bold ${surface.title}`}>
@@ -157,111 +158,104 @@ export const SoilLineChart = ({
           </span>
         </div>
 
-        {/* {data.length === 0 ? (
-          <div className="flex h-72.5 w-full items-center justify-center rounded-lg border border-dashed border-[#c7ced8] bg-white/60">
-            <p className="text-sm font-medium text-[#5b6678]">
-              Waiting for backend chart points (Socket.IO farmupdate)...
-            </p>
-          </div>
-        ) : ( */}
-        <div className="h-72.5 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={chartData}
-              margin={{ top: 12, right: 20, left: 5, bottom: 8 }}
-            >
-              <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" />
-              <XAxis
-                type="number"
-                dataKey="timeMs"
-                domain={[axisStartMs, latestTimeMs]}
-                ticks={axisTicks}
-                tickFormatter={formatTime}
-                label={{
-                  value: "Time (last 24h)",
-                  position: "insideBottomRight",
-                  offset: -5,
-                }}
-                tick={{ fill: colors.tick, fontSize: 10 }}
-              />
-              <YAxis
-                yAxisId="left"
-                domain={["auto", "auto"]}
-                tick={{ fill: colors.axis1, fontSize: 10 }}
-                label={{ value: "%", angle: -90, position: "insideLeft" }}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                domain={["auto", "auto"]}
-                tick={{ fill: colors.axis2, fontSize: 10 }}
-                label={{ value: "pH", angle: 90, position: "insideRight" }}
-              />
-              <Tooltip
-                labelFormatter={tooltipLabel}
-                formatter={tooltipValue}
-                contentStyle={{ borderRadius: 10, borderColor: "#d5dccd" }}
-              />
-
-              <Legend />
-
-              {/* Soil moisture and pH are drawn on separate axes so the scales do not fight each other. */}
-              <Area
-                yAxisId="left"
-                type="natural"
-                dataKey="soil"
-                name="Soil Moisture"
-                fill={colors.area1}
-                fillOpacity={0.06}
-                stroke="none"
-              />
-
-              <Line
-                yAxisId="left"
-                type="natural"
-                dataKey="soil"
-                name="Soil Moisture"
-                stroke={colors.line1}
-                strokeWidth={2.4}
-                dot={false}
-                activeDot={{ r: 4 }}
-              />
-
-              <Area
-                yAxisId="right"
-                type="natural"
-                dataKey="ph"
-                name="pH"
-                fill={colors.area2}
-                fillOpacity={0.06}
-                stroke="none"
-              />
-
-              <Line
-                yAxisId="right"
-                type="natural"
-                dataKey="ph"
-                name="pH"
-                stroke={colors.line2}
-                strokeWidth={2.4}
-                dot={false}
-                activeDot={{ r: 4 }}
-              />
-
-              {alertPoints.map((point, index) => (
-                <ReferenceDot
-                  key={`alert-dot-${index}`}
-                  x={point.timeMs}
-                  yAxisId="right"
-                  y={point.ph}
-                  r={4}
-                  fill="#f97316"
-                  stroke="#ffffff"
-                  strokeWidth={1.5}
+        <div className="h-72 w-full">
+          {isLoading && data.length === 0 ? (
+            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-[#c7ced8] bg-white/60 px-4 text-center">
+              <div>
+                <p className="text-sm font-semibold text-[#465163]">
+                  Loading 24-hour history...
+                </p>
+                <p className="mt-1 text-xs text-[#6a7586]">
+                  Fetching MongoDB readings before live updates continue.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={chartData}
+                margin={{ top: 24, right: 8, left: 0, bottom: 4 }}
+              >
+                <defs>
+                  <linearGradient id="soilFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor={colors.area1}
+                      stopOpacity={0.28}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={colors.area1}
+                      stopOpacity={0.03}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" />
+                <XAxis
+                  type="number"
+                  dataKey="timeMs"
+                  domain={[axisStartMs, latestTimeMs]}
+                  ticks={axisTicks}
+                  tickFormatter={formatTime}
+                  label={{
+                    value: "Time (last 24h)",
+                    position: "insideBottomRight",
+                    offset: -5,
+                  }}
+                  tick={{ fill: colors.tick, fontSize: 10 }}
                 />
-              ))}
-            </AreaChart>
-          </ResponsiveContainer>
+                <YAxis
+                  yAxisId="left"
+                  domain={["auto", "auto"]}
+                  tick={{ fill: colors.axis1, fontSize: 10 }}
+                  label={{ value: "%", angle: -90, position: "insideLeft" }}
+                />
+                <Tooltip
+                  labelFormatter={tooltipLabel}
+                  formatter={tooltipValue}
+                  contentStyle={{ borderRadius: 16, borderColor: "#d5dccd" }}
+                />
+
+                <Legend verticalAlign="top" height={24} />
+
+                {/* Soil moisture and pH are drawn on separate axes so the scales do not fight each other. */}
+                <Area
+                  yAxisId="left"
+                  type="natural"
+                  dataKey="soil"
+                  name="Soil Moisture"
+                  fill="url(#soilFill)"
+                  stroke="none"
+                />
+
+                <Line
+                  yAxisId="left"
+                  type="natural"
+                  dataKey="soil"
+                  name="Soil Moisture"
+                  stroke={colors.line1}
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+
+                {alertPoints.map((point, index) => (
+                  <ReferenceDot
+                    key={`alert-dot-${index}`}
+                    x={point.timeMs}
+                    yAxisId="left"
+                    y={point.soil}
+                    r={4}
+                    fill="#f97316"
+                    stroke="#ffffff"
+                    strokeWidth={1.5}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </section>

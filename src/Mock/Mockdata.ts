@@ -6,7 +6,6 @@ export const mockHealthy = {
     { id: "rain", label: "Rain Level", value: 0, unit: "mm" },
     { id: "soil", label: "Soil Moisture", value: 60, unit: "%" },
     { id: "light", label: "Light Level", value: 450, unit: "Lux" },
-    { id: "ph", label: "Soil pH", value: 6.2, unit: "pH" },
   ],
   AIData: {
     ui_status: "healthy",
@@ -32,7 +31,6 @@ export const mockDisease = {
     { id: "rain", label: "Rain Level", value: 12, unit: "mm" },
     { id: "soil", label: "Soil Moisture", value: 75, unit: "%" },
     { id: "light", label: "Light Level", value: 450, unit: "Lux" },
-    { id: "ph", label: "Soil pH", value: 6.2, unit: "pH" },
   ],
   AIData: {
     ui_status: "disease",
@@ -57,7 +55,6 @@ export const mockPest = {
     { id: "rain", label: "Rain Level", value: 0, unit: "mm" },
     { id: "soil", label: "Soil Moisture", value: 20, unit: "%" },
     { id: "light", label: "Light Level", value: 450, unit: "Lux" },
-    { id: "ph", label: "Soil pH", value: 6.2, unit: "pH" },
   ],
   AIData: {
     ui_status: "pest",
