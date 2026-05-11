@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  RemoteTuningPayload,
   RemoteConfigurationProps,
   UIStatus,
+  RemoteConfigPayload,
+  ESP32ANDAIconfiguration,
 } from "@/types/type";
+import { useUserLoginContext } from "@/context/userLogincontex";
 
 const getRemoteConfigPalette = (status: UIStatus) => {
   const palettes: Record<
@@ -97,6 +99,7 @@ const QUICK_REMOTE_PROFILES = [
 ];
 
 export const RemoteConfiguration = ({
+  machineLocation,
   status,
   defaultConfidence = 75,
   defaultIntervalMinutes = 30,
@@ -111,6 +114,10 @@ export const RemoteConfiguration = ({
     defaultIntervalMinutes,
   );
   const [isSaving, setIsSaving] = useState(false);
+  // Whenever the backend updates the default values (e.g. from a database or after applying settings), this effect ensures the sliders reflect those changes immediately.
+  useEffect(() => {
+    setIntervalMinutes(defaultIntervalMinutes);
+  }, [defaultIntervalMinutes]);
 
   const pollLabel = useMemo(() => {
     if (intervalMinutes >= 60) {
@@ -133,10 +140,11 @@ export const RemoteConfiguration = ({
   }, [intervalMinutes]);
 
   const handleSave = async () => {
-    const payload: RemoteTuningPayload = {
+    const payload: ESP32ANDAIconfiguration = {
+      machine_location: machineLocation,
       aiConfidence,
       sensorPollingRateMinutes: intervalMinutes,
-      updatedAt: new Date().toISOString(),
+      // updatedAt: new Date().toISOString(),
     };
 
     setIsSaving(true);

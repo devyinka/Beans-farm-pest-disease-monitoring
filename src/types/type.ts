@@ -204,23 +204,19 @@ export type alertHistoryprops = {
   isLoading?: boolean;
 };
 
-export type RemoteConfigPayload = {
+export type ESP32ANDAIconfiguration = {
+  machine_location: string;
   aiConfidence: number;
   sensorPollingRateMinutes: number;
-  plantingDate: string;
-  updatedAt: string;
+  // updatedAt: string;
 };
-
-export type RemoteTuningPayload = {
-  aiConfidence: number;
-  sensorPollingRateMinutes: number;
-  updatedAt: string;
-};
-
 export type BeanAgePayload = {
+  machine_location: string;
   plantingDate: string;
-  updatedAt: string;
+  // updatedAt: string;
 };
+
+export type RemoteConfigPayload = ESP32ANDAIconfiguration & BeanAgePayload;
 
 export type RemoteConfig = {
   aiConfidence: number;
@@ -229,16 +225,18 @@ export type RemoteConfig = {
 };
 
 export type RemoteConfigurationProps = {
+  machineLocation: string;
   status: UIStatus;
   defaultConfidence?: number;
   defaultIntervalMinutes?: number;
-  onSave?: (payload: RemoteTuningPayload) => void | Promise<void>;
+  onSave?: (payload: ESP32ANDAIconfiguration) => void | Promise<void>;
 };
 
 export type BeanAgeConfigurationProps = {
   status: UIStatus;
   defaultBeanAge?: string;
   onSave?: (payload: BeanAgePayload) => void | Promise<void>;
+  machineLocation: string;
 };
 
 export type ThresholdPayload = {

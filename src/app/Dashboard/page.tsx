@@ -13,10 +13,11 @@ import {
   ChartDataSourceLabel,
   FarmUpdatePayload,
   BeanAgePayload,
-  RemoteTuningPayload,
   RemoteConfig,
   UIStatus,
   ThresholdPayload,
+  RemoteConfigPayload,
+  ESP32ANDAIconfiguration,
 } from "@/types/type";
 import ClimateLineChart from "@/components/Dashboard/ClimateLineChart";
 import {
@@ -31,7 +32,9 @@ import { Alerthistory } from "@/components/Dashboard/Alerthistory";
 import { RemoteConfiguration } from "@/components/Dashboard/RemoteConfiguration";
 import { BeanAgeConfiguration } from "@/components/Dashboard/BeanAgeConfiguration";
 import { ThresholdConfiguration } from "@/components/Dashboard/ThresholdConfiguration";
-import axios from "axios";
+import { useUserLoginContext } from "@/context/userLogincontex";
+
+import BACKENDAPI from "@/API";
 
 const getStoredMachineLocation = (): string => {
   if (typeof window === "undefined") return "";
@@ -41,9 +44,9 @@ const getStoredMachineLocation = (): string => {
 
 // Main dashboard page component
 const DashboardPage = () => {
-  const BACKENDURL =
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
+  // const BACKENDURL =process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
   const { isConnected } = useSocketStatus();
+  const { userProfile } = useUserLoginContext();
 
   const [remoteConfig, setRemoteConfig] =
     useState<RemoteConfig>(remoteConfigDefault);
@@ -56,13 +59,9 @@ const DashboardPage = () => {
     floodedSoilThreshold: 80,
   });
 
-  // Local header timing override used after remote configuration is successfully saved.
-  const [configAppliedAt, setConfigAppliedAt] = useState<number | null>(null);
   const [configIntervalMinutes, setConfigIntervalMinutes] = useState<
     number | null
   >(null);
-  // Keep the initial render deterministic so SSR and hydration agree.
-  const [clockTick, setClockTick] = useState<number>(0);
 
   // Live values supplied by the socket hook (no mock fallback).
   const { farmData, chartdata, minutesago, minituesnext, isHistoryLoading } =
@@ -77,22 +76,56 @@ const DashboardPage = () => {
   const [seedLocation] = useState<string>(getStoredMachineLocation);
 
   const machineLocation = farmData?.farmInfo?.name?.trim() || seedLocation;
-
+  // const machineLocation = userProfile?.machineLocation?.trim();
   useEffect(() => {
     if (!machineLocation) return;
 
     void fetchAlertHistory(machineLocation);
   }, [fetchAlertHistory, machineLocation]);
 
+  // ... existing code ...
   useEffect(() => {
-    if (configAppliedAt === null || configIntervalMinutes === null) return;
+    if (!machineLocation) return;
+    void fetchAlertHistory(machineLocation);
+  }, [fetchAlertHistory, machineLocation]);
 
-    const timer = setInterval(() => {
-      setClockTick(Date.now());
-    }, 60000);
+  useEffect(() => {
+    if (!machineLocation) return;
 
-    return () => clearInterval(timer);
-  }, [configAppliedAt, configIntervalMinutes]);
+    const fetchConfiguration = async () => {
+      try {
+        const response = await BACKENDAPI.get("/get/SensorPollingRate", {
+          params: { machine_location: machineLocation },
+        });
+        console.log("2. Raw Backend Response:", response.data);
+
+        const config =
+          response.data?.config || response.data?.data || response.data;
+
+        if (config && typeof config === "object") {
+          const actualRate = config.sensorPollingRate;
+
+          if (actualRate !== undefined) {
+            setRemoteConfig((prev) => ({
+              ...prev,
+              aiConfidence: config.aiConfidence,
+              sensorPollingRateMinutes: actualRate,
+              BeanAge: config.beansPlantingDate,
+            }));
+            setConfigIntervalMinutes(actualRate);
+          } else {
+            console.warn(
+              "FAILED: Neither polling rate variable was found in the object!",
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Fetch completely failed:", error);
+      }
+    };
+
+    void fetchConfiguration();
+  }, [machineLocation]);
 
   if (!farmData) {
     return (
@@ -130,35 +163,26 @@ const DashboardPage = () => {
     ? "LIVE STREAM"
     : "SENSOR HISTORY";
 
-  const hasConfigTimingOverride =
-    configAppliedAt !== null && configIntervalMinutes !== null;
+  // Calculate time until next reading based on backend config, falling back to socket timing if config is not yet loaded. This allows the "Next Reading In" timer in the header to reflect the actual configured polling rate as soon as it's available, while still showing a countdown based on live socket data in the meantime.
+  const displayLastReading = minutesago;
 
-  const elapsedSinceConfigSave = hasConfigTimingOverride
-    ? Math.floor((clockTick - configAppliedAt) / 60000)
-    : 0;
-
-  const displayLastReading = hasConfigTimingOverride
-    ? Math.max(0, elapsedSinceConfigSave)
-    : minutesago;
-
-  const displayNextReading = hasConfigTimingOverride
-    ? Math.max(0, configIntervalMinutes - elapsedSinceConfigSave)
-    : minituesnext;
-
+  const displayNextReading =
+    configIntervalMinutes !== null
+      ? Math.max(0, configIntervalMinutes - minutesago)
+      : minituesnext;
   // Handlers to apply remote configuration changes to the UI immediately after saving, even if the backend request fails. This ensures the user sees their changes reflected in the dashboard right away, providing a more responsive experience.
-  const applyRemoteTuningToUI = (payload: RemoteTuningPayload) => {
+  const applyRemoteTuningToUI = (payload: RemoteConfigPayload) => {
     setRemoteConfig((prev) => ({
+      ...prev,
       aiConfidence: payload.aiConfidence,
       sensorPollingRateMinutes: payload.sensorPollingRateMinutes,
-      BeanAge: prev.BeanAge,
+      BeanAge: payload.plantingDate,
     }));
 
-    const now = Date.now();
-    setConfigAppliedAt(now);
     setConfigIntervalMinutes(payload.sensorPollingRateMinutes);
-    setClockTick(now);
   };
 
+  // Handler to apply updated bean planting date to the UI immediately after saving, ensuring the new planting date is reflected in the dashboard without waiting for a backend response.
   const applyBeanAgeToUI = (payload: BeanAgePayload) => {
     setRemoteConfig((prev) => ({
       ...prev,
@@ -167,40 +191,45 @@ const DashboardPage = () => {
   };
 
   // Handler for when the user saves new remote configuration settings from the dashboard UI. This will send the updated config to the backend and also update local state to reflect the new settings immediately in the UI.
-  const handleRemoteSettingsSave = async (payload: RemoteTuningPayload) => {
+  const handleRemoteSettingsSave = async (payload: ESP32ANDAIconfiguration) => {
+    console.log("Data leaving frontend:", {
+      aiConfidence: payload.aiConfidence,
+      sensorPollingRateMinutes: payload.sensorPollingRateMinutes,
+      machine_location: payload.machine_location,
+    });
     try {
-      const response = await axios.post(
-        `${BACKENDURL}/api/device-config/remote-settings`,
-        payload,
-      );
-      console.log("Remote settings saved successfully:", response.data);
-      applyRemoteTuningToUI(payload);
+      const response = await BACKENDAPI.post("/Device/Configuration", {
+        aiConfidence: payload.aiConfidence,
+        sensorPollingRateMinutes: payload.sensorPollingRateMinutes,
+        machine_location: payload.machine_location,
+      });
+      if (response) {
+        applyRemoteTuningToUI(payload as RemoteConfigPayload);
+      }
     } catch (error) {
       console.error("Failed to save remote settings:", error);
-      applyRemoteTuningToUI(payload);
+      // applyRemoteTuningToUI(payload);
     }
   };
 
   const handleBeanAgeSave = async (payload: BeanAgePayload) => {
     try {
-      const response = await axios.post(
-        `${BACKENDURL}/api/device-config/bean-age`,
+      const response = await BACKENDAPI.post(
+        "/update/BeanPlantingDate",
         payload,
       );
-      console.log("Bean age saved successfully:", response.data);
-      applyBeanAgeToUI(payload);
+      if (response) {
+        applyBeanAgeToUI(payload);
+      }
     } catch (error) {
       console.error("Failed to save bean age:", error);
-      applyBeanAgeToUI(payload);
+      // applyBeanAgeToUI(payload);
     }
   };
 
   const handleThresholdSave = async (payload: ThresholdPayload) => {
     try {
-      const response = await axios.post(
-        `${BACKENDURL}/api/device-config/thresholds`,
-        payload,
-      );
+      const response = await BACKENDAPI.post("Device/Thresholds", payload);
       console.log("Thresholds saved successfully:", response.data);
       setThresholdConfig(payload);
     } catch (error) {
@@ -301,12 +330,14 @@ const DashboardPage = () => {
             status={status}
             defaultConfidence={remoteConfig.aiConfidence}
             defaultIntervalMinutes={remoteConfig.sensorPollingRateMinutes}
+            machineLocation={machineLocation}
             onSave={handleRemoteSettingsSave}
           />
           <BeanAgeConfiguration
             status={status}
             defaultBeanAge={remoteConfig.BeanAge}
             onSave={handleBeanAgeSave}
+            machineLocation={machineLocation}
           />
         </div>
 

@@ -190,6 +190,7 @@ const getBeanAgePalette = (status: UIStatus) => {
 
 export const BeanAgeConfiguration = ({
   status,
+  machineLocation,
   defaultBeanAge = new Date().toISOString().split("T")[0],
   onSave,
 }: BeanAgeConfigurationProps) => {
@@ -208,8 +209,9 @@ export const BeanAgeConfiguration = ({
 
   const handleSave = async () => {
     const payload: BeanAgePayload = {
+      machine_location: machineLocation, // This should ideally come from props or context
       plantingDate,
-      updatedAt: new Date().toISOString(),
+      // updatedAt: new Date().toISOString(),
     };
 
     setIsSaving(true);
