@@ -1,15 +1,20 @@
 "use client";
-import axios from "axios";
-import { useMemo, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 import AuthTabs from "./AuthTabs";
 import ForgotPanel from "./ForgotPanel";
 import LoginPanel from "./LoginPanel";
 import RegisterPanel from "./RegisterPanel";
+import { useRouter } from "next/navigation";
+import { useUserLoginContext } from "@/context/userLogincontex";
+
+import BACKENDAPI from "@/API";
 
 import type { AuthTab } from "./types";
 
 const AuthPage = () => {
-  const BACKENDURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const router = useRouter();
+  const { setIsLoggedIn, setUserProfile } = useUserLoginContext();
+
   const [activeTab, setActiveTab] = useState<AuthTab>("login");
 
   const [loginUser, setLoginUser] = useState("");
@@ -30,6 +35,18 @@ const AuthPage = () => {
   const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loginSuccess, setLoginSuccess] = useState("");
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (loginSuccess) {
+      timer = setTimeout(() => {
+        router.push("/Dashboard");
+      }, 1500);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [loginSuccess, router]);
 
   const passwordStrength = useMemo(() => {
     let score = 0;
@@ -63,47 +80,110 @@ const AuthPage = () => {
 
     setIsLoginSubmitting(true);
     try {
-      const response = await axios.post(`${BACKENDURL}/auth/login`, {
-        user: userValue,
+      const response = await BACKENDAPI.post(`/auth/login`, {
+        email: userValue,
         password: loginPass,
-        machineLocation: locationValue,
+        machine_location: locationValue,
       });
 
       if (response.status >= 200 && response.status < 300) {
+        // Safely extract token, mirroring your register logic
+        const token = response.data?.token ?? response.data?.user?.token;
+        if (token) {
+          localStorage.setItem("beanfarm_token", token);
+        }
+        localStorage.setItem("beanfarm_machine_location", locationValue);
         setLoginSuccess("Login successful. Redirecting to dashboard...");
+
+        setIsLoggedIn(true);
+
+        // Check for either data or user objects to prevent crashes
+        const userData = response.data?.user || response.data?.data;
+
+        if (userData) {
+          setUserProfile({
+            machineLocation: userData.machine_location || locationValue,
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+            email: userData.email || "",
+            phone: userData.phoneNumber || "",
+          });
+        }
       } else {
-        setLoginError(
-          "Unable to sign in. Please verify your credentials and try again.",
-        );
+        setLoginError("Unable to sign in. Please verify your credentials.");
       }
-    } catch (error) {
-      console.error("Login request failed", error);
-      setLoginError(
-        "Sign in failed. Check your connection or backend endpoint.",
-      );
+    } catch (error: string | any) {
+      // ADD THIS CONSOLE LOG to see exact JS errors in your browser console!
+      console.error("Login Error Breakdown:", error);
+
+      const serverMessage =
+        error?.response?.data?.message ||
+        "Sign in failed. Check your connection or backend endpoint.";
+      setLoginError(serverMessage);
     } finally {
       setIsLoginSubmitting(false);
     }
   };
 
-  const handleRegister = () => {
-    // placeholder action until backend auth integration
-    console.info("Register payload", {
-      firstName,
-      lastName,
-      email,
-      phone,
-      location,
-      password,
-      confirmPassword,
-    });
+  const handleRegister = async () => {
+    setLoginError("");
+    setLoginSuccess("");
+
+    if (password !== confirmPassword) {
+      setLoginError("Passwords do not match.");
+      return;
+    }
+
+    if (passwordStrength < 75) {
+      setLoginError(
+        "Your password is too weak. Please include numbers, uppercase, and symbols.",
+      );
+      return;
+    }
+
+    setIsLoginSubmitting(true);
+
+    try {
+      const response = await BACKENDAPI.post(`/auth/register`, {
+        firstName,
+        lastName,
+        email,
+        phoneNumber: phone,
+        machine_location: location,
+        password,
+      });
+
+      if (response.status === 201) {
+        const token = response.data?.token ?? response.data?.user?.token;
+        if (token) {
+          localStorage.setItem("beanfarm_token", token);
+          setIsLoggedIn(true);
+          setUserProfile({
+            machineLocation: location,
+            firstName,
+            lastName,
+            email,
+            phone,
+          });
+        }
+        localStorage.setItem("beanfarm_machine_location", location);
+        setLoginSuccess("Registration successful. Redirecting...");
+        router.push("/Dashboard");
+      }
+    } catch (error: string | any) {
+      const serverMessage =
+        error.response?.data?.message || "Registration failed.";
+      setLoginError(serverMessage);
+    } finally {
+      setIsLoginSubmitting(false);
+    }
   };
 
   const handleForgot = async () => {
     {
       let res;
       try {
-        res = await axios.post(`${BACKENDURL}/forgot-password`, {
+        res = await BACKENDAPI.post(`/auth/forgot-password`, {
           email: forgotEmail,
         });
       } catch (error) {
@@ -114,7 +194,7 @@ const AuthPage = () => {
         setResetSent(true);
       }
     }
-    setResetSent(true); //for testing
+    // setResetSent(true); //for testing
   };
   return (
     <div className="flex w-full flex-col bg-[linear-gradient(180deg,rgba(20,10,34,0.86)_0%,rgba(33,14,57,0.72)_100%)] px-6 py-10 backdrop-blur-[6px] lg:px-9">
@@ -163,6 +243,9 @@ const AuthPage = () => {
           onConfirmPasswordChange={setConfirmPassword}
           onSubmit={handleRegister}
           onSwitchLogin={() => setActiveTab("login")}
+          isSubmitting={isLoginSubmitting}
+          errorMessage={loginError}
+          successMessage={loginSuccess}
         />
       )}
 

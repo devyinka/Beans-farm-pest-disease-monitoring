@@ -1,13 +1,20 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { FarmSocket } from "@/socket/socket";
 import { useSocket } from "./useSocket";
+import { useUserLoginContext } from "@/context/userLogincontex";
+import BACKENDAPI from "@/API";
 import type {
   FarmUpdatePayload,
   ClimateChartPoint,
   SensorReading,
   SoilChartPoint,
+  RawSensorHistoryRecord,
 } from "@/types/type";
 
+const HISTORY_WINDOW_HOURS = 24;
+const HISTORY_WINDOW_MS = HISTORY_WINDOW_HOURS * 60 * 60 * 1000;
+
+// Helper to extract a sensor value by ID with a fallback if missing or malformed.
 const getSensorValue = (
   sensors: SensorReading[],
   sensorId: string,
@@ -17,12 +24,55 @@ const getSensorValue = (
   return typeof sensor?.value === "number" ? sensor.value : fallback;
 };
 
+// Transform a raw sensor history record into a ClimateChartPoint for the charts.
+const toClimatePoint = (
+  reading: RawSensorHistoryRecord,
+  status: FarmUpdatePayload["AIData"]["ui_status"],
+): ClimateChartPoint => ({
+  timeStamp: reading.timeStamp,
+  temp: Number(reading.temperature ?? 0),
+  hum: Number(reading.humidity ?? 0),
+  soil: Number(reading.soil_moisture ?? 0),
+  alert: false,
+  status,
+});
+
+const toSoilPoint = (
+  reading: RawSensorHistoryRecord,
+  status: FarmUpdatePayload["AIData"]["ui_status"],
+): SoilChartPoint => ({
+  timeStamp: reading.timeStamp,
+  soil: Number(reading.soil_moisture ?? 0),
+  alert: false,
+  status,
+});
+
+const trimToHistoryWindow = <T extends { timeStamp: string }>(
+  points: T[],
+): T[] => {
+  if (points.length === 0) return points;
+
+  const latestTimeMs = new Date(points[points.length - 1].timeStamp).getTime();
+  const cutoffTimeMs = latestTimeMs - HISTORY_WINDOW_MS;
+
+  return points.filter(
+    (point) => new Date(point.timeStamp).getTime() >= cutoffTimeMs,
+  );
+};
+
+const getStoredMachineLocation = (): string => {
+  if (typeof window === "undefined") return "";
+
+  return localStorage.getItem("beanfarm_machine_location")?.trim() ?? "";
+};
+
 // Custom hook to manage farm data and chart updates
 export const useFarmData = () => {
+  const { userProfile } = useUserLoginContext();
   // Latest payload from backend Socket.IO event (single source of truth for dashboard cards/status).
   const [farmData, setFarmData] = useState<FarmUpdatePayload | null>(null);
 
-  // Live chart history built only from backend socket events (no mock seed, no localStorage restore).
+  // Charts start empty and are seeded from backend MongoDB history on login.
   const [chartdata, setChartdata] = useState<ClimateChartPoint[]>([]);
   const [soilchartdata, setSoilChartdata] = useState<SoilChartPoint[]>([]);
   const [currentinterval, setCurrentInterval] = useState<number>(30);
@@ -30,74 +80,229 @@ export const useFarmData = () => {
   const [lastminue, setLastminute] = useState<number | null>(null);
   const [minutesago, setMinutesago] = useState<number>(0);
   const [minituesnext, setMinutesnext] = useState<number>(0);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [seedLocation, setSeedLocation] = useState<string>("");
+  const loadedHistoryForLocation = useRef<string | null>(null);
+  const loadingHistoryForLocation = useRef<string | null>(null);
+  const pendingLiveUpdateRef = useRef<FarmUpdatePayload | null>(null);
 
+  // Fetch the latest UI configuration from the backend
+  const getUI = useCallback(async (locationToFetch: string) => {
+    if (!locationToFetch) {
+      console.warn("getUI aborted: No machine location provided.");
+      return;
+    }
+
+    try {
+      const response = await BACKENDAPI.get("/ui/getUI", {
+        params: {
+          machine_location: locationToFetch,
+        },
+      });
+
+      if (response.status >= 200 && response.status < 300) {
+        const savedUI = response.data?.data || response.data;
+
+        setFarmData(savedUI);
+        if (savedUI?.timeStamp) {
+          setLastminute(new Date(savedUI.timeStamp).getTime());
+        }
+      } else {
+        console.error(
+          "Failed to fetch UI configuration: ",
+          response.statusText,
+        );
+      }
+    } catch (error) {
+      console.error("Failed to fetch UI configuration:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const safeLocation =
+      userProfile?.machineLocation?.trim() || getStoredMachineLocation();
+
+    if (safeLocation) {
+      setSeedLocation(safeLocation);
+      getUI(safeLocation);
+    }
+  }, [userProfile?.machineLocation, getUI]);
+
+  // Append a new live data point to the charts, trimming old points outside the history window.
+  const appendLivePoint = useCallback((data: FarmUpdatePayload) => {
+    setChartdata((prev) => {
+      const previousPoint = prev[prev.length - 1];
+
+      const nextPoint: ClimateChartPoint = {
+        timeStamp: data.timestamp,
+        temp: Number(
+          getSensorValue(data.sensors, "temp", previousPoint?.temp ?? 0),
+        ),
+        hum: Number(
+          getSensorValue(data.sensors, "hum", previousPoint?.hum ?? 0),
+        ),
+        soil: Number(
+          getSensorValue(data.sensors, "soil", previousPoint?.soil ?? 0),
+        ),
+        alert:
+          data?.AIData?.sms_alert_sent || data?.AIData?.ui_status !== "healthy",
+        status: data?.AIData?.ui_status ?? "healthy",
+      };
+
+      return trimToHistoryWindow([...prev, nextPoint]);
+    });
+
+    setSoilChartdata((prev) => {
+      const previousPoint = prev[prev.length - 1];
+
+      const nextPoint: SoilChartPoint = {
+        timeStamp: data.timestamp,
+        soil: Number(
+          getSensorValue(data.sensors, "soil", previousPoint?.soil ?? 0),
+        ),
+        alert:
+          data?.AIData?.sms_alert_sent || data?.AIData?.ui_status !== "healthy",
+        status: data?.AIData?.ui_status ?? "healthy",
+      };
+
+      return trimToHistoryWindow([...prev, nextPoint]);
+    });
+  }, []);
+
+  const loadHistoryForLocation = useCallback(
+    async (
+      machineLocation: string,
+      status: FarmUpdatePayload["AIData"]["ui_status"],
+    ) => {
+      // Load the initial 24-hour series only once per farm location.
+      if (!machineLocation) {
+        return;
+      }
+
+      if (
+        loadedHistoryForLocation.current === machineLocation ||
+        loadingHistoryForLocation.current === machineLocation
+      ) {
+        return;
+      }
+
+      loadingHistoryForLocation.current = machineLocation;
+      setIsHistoryLoading(true);
+
+      try {
+        const response = await BACKENDAPI.get<{
+          readings: RawSensorHistoryRecord[];
+        }>("/sensor/history", {
+          params: {
+            machine_location: machineLocation,
+            hours: HISTORY_WINDOW_HOURS,
+          },
+        });
+
+        const readings = [...(response.data.readings ?? [])].sort(
+          (left, right) =>
+            new Date(left.timeStamp).getTime() -
+            new Date(right.timeStamp).getTime(),
+        );
+
+        const historicalClimate = readings.map((reading) =>
+          toClimatePoint(reading, status),
+        );
+        const historicalSoil = readings.map((reading) =>
+          toSoilPoint(reading, status),
+        );
+
+        // Replace the empty chart state with real MongoDB history before live socket updates arrive.
+        setChartdata(historicalClimate);
+        setSoilChartdata(historicalSoil);
+
+        loadedHistoryForLocation.current = machineLocation;
+
+        console.info(
+          "Loaded 24-hour raw sensor history for chart seed:",
+          machineLocation,
+          readings.length,
+        );
+
+        // If a live update arrived while we were loading the history, append it now so we don't lose any data points.
+        if (pendingLiveUpdateRef.current) {
+          const pendingUpdate = pendingLiveUpdateRef.current;
+          pendingLiveUpdateRef.current = null;
+          appendLivePoint(pendingUpdate);
+        }
+      } catch (error) {
+        console.error("Failed to load raw sensor history for charts:", error);
+      } finally {
+        loadingHistoryForLocation.current = null;
+        setIsHistoryLoading(false);
+      }
+    },
+    [appendLivePoint],
+  );
+
+  //Handle incoming Socket.IO farm updates from the backend and merge them safely with existing state to keep the dashboard in sync without losing data.
   const onfarmupdate = useCallback(
     (data: FarmUpdatePayload) => {
-      // 1) Save latest backend payload.
-      setFarmData(data);
+      // Merge incoming farm update with existing state, ensuring we don't overwrite important fields if they're missing in the socket payload.
+      setFarmData((prevState) => ({
+        ...data,
+        farmInfo: data.farmInfo ||
+          prevState?.farmInfo || {
+            name: "Unknown Location",
+            location: "Unknown Location",
+          },
+        AIData: data.AIData ||
+          prevState?.AIData || {
+            ui_status: "healthy",
+            ui_title: "Awaiting Data",
+            spray_action: "No action required.",
+            description: "Fetching latest analysis...",
+            confidence: 0,
+            sms_alert_sent: false,
+          },
+        sensors: data.sensors || prevState?.sensors || [],
+      }));
+
       const activeInterval = data.datainterval || currentinterval;
       setCurrentInterval(activeInterval);
 
-      // 2) Append temperature/humidity point from backend sensors.
-      setChartdata((prev) => {
-        const previousPoint = prev[prev.length - 1];
-
-        const newpoint: ClimateChartPoint = {
-          time: data.timestamp,
-          temp: Number(
-            getSensorValue(data.sensors, "temp", previousPoint?.temp ?? 0),
-          ),
-          hum: Number(
-            getSensorValue(data.sensors, "hum", previousPoint?.hum ?? 0),
-          ),
-          alert:
-            data.AIData.sms_alert_sent || data.AIData.ui_status !== "healthy",
-          status: data.AIData.ui_status,
-        };
-
-        const updatedData = [...prev, newpoint];
-        const maxPointsFor24Hours = Math.ceil((24 * 60) / activeInterval);
-
-        return updatedData.length > maxPointsFor24Hours
-          ? updatedData.slice(updatedData.length - maxPointsFor24Hours)
-          : updatedData;
-      });
-
-      // 3) Append soil moisture/pH point from backend sensors.
-      setSoilChartdata((prev) => {
-        const previousPoint = prev[prev.length - 1];
-
-        const newsoilpoint: SoilChartPoint = {
-          time: data.timestamp,
-          soil: Number(
-            getSensorValue(data.sensors, "soil", previousPoint?.soil ?? 0),
-          ),
-          ph: Number(
-            getSensorValue(data.sensors, "ph", previousPoint?.ph ?? 0),
-          ),
-          alert:
-            data.AIData.sms_alert_sent || data.AIData.ui_status !== "healthy",
-          status: data.AIData.ui_status,
-        };
-
-        const updatedData = [...prev, newsoilpoint];
-        const maxPointsFor24Hours = Math.ceil((24 * 60) / activeInterval);
-
-        return updatedData.length > maxPointsFor24Hours
-          ? updatedData.slice(updatedData.length - maxPointsFor24Hours)
-          : updatedData;
-      });
-
-      // 4) Reset timing counters for "last reading" and "next reading" labels.
+      // Keep the dashboard timers in sync
       setLastminute(Date.now());
       setMinutesago(0);
       setMinutesnext(activeInterval);
+
+      // Safely extract machine location, falling back to previous state if missing in socket
+      const incomingLocation = data.farmInfo?.name?.trim();
+
+      if (
+        !incomingLocation ||
+        loadedHistoryForLocation.current !== incomingLocation
+      ) {
+        pendingLiveUpdateRef.current = data;
+        return;
+      }
+
+      appendLivePoint(data);
     },
-    [currentinterval],
+    [appendLivePoint, currentinterval],
   );
 
   // Listen for backend "farmupdate" events and feed the live pipeline above.
   useSocket(FarmSocket, "farmupdate", onfarmupdate);
+
+  useEffect(() => {
+    const machineLocation = farmData?.farmInfo?.name?.trim() || seedLocation;
+
+    const liveStatus = farmData?.AIData?.ui_status ?? "healthy";
+    if (!machineLocation) return;
+
+    void loadHistoryForLocation(machineLocation, liveStatus);
+  }, [
+    farmData?.farmInfo?.name,
+    farmData?.AIData?.ui_status,
+    seedLocation,
+    loadHistoryForLocation,
+  ]);
 
   useEffect(() => {
     if (lastminue === null) {
@@ -121,5 +326,6 @@ export const useFarmData = () => {
     minutesago,
     minituesnext,
     currentinterval,
+    isHistoryLoading,
   };
 };

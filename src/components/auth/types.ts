@@ -73,6 +73,9 @@ export type RegisterPanelProps = {
   onConfirmPasswordChange: (value: string) => void;
   onSubmit: AuthSubmitHandler;
   onSwitchLogin: () => void;
+  isSubmitting?: boolean;
+  errorMessage?: string;
+  successMessage?: string;
 };
 
 export type ForgotPanelProps = {

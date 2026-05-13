@@ -7,17 +7,80 @@ import {
   UIStatus,
 } from "@/types/type";
 
-const MIN_BEAN_AGE_DAYS = 1;
 const MAX_BEAN_AGE_DAYS = 120;
 const AGE_PRESETS = [
-  { label: "Nursery", day: 7 },
-  { label: "Vegetative", day: 28 },
-  { label: "Flowering", day: 55 },
-  { label: "Pod Fill", day: 90 },
+  { label: "Nursery", daysOffset: 7 },
+  { label: "Vegetative", daysOffset: 28 },
+  { label: "Flowering", daysOffset: 55 },
+  { label: "Pod Fill", daysOffset: 90 },
 ];
 
-const clampBeanAge = (value: number) =>
-  Math.min(MAX_BEAN_AGE_DAYS, Math.max(MIN_BEAN_AGE_DAYS, value));
+const AGE_PRESET_COLORS: Record<
+  (typeof AGE_PRESETS)[number]["label"],
+  {
+    bg: string;
+    text: string;
+    border: string;
+    activeBg: string;
+    activeText: string;
+    activeBorder: string;
+  }
+> = {
+  Nursery: {
+    bg: "#e8f7ec",
+    text: "#1f6a32",
+    border: "#9ed5ac",
+    activeBg: "#2f7f3a",
+    activeText: "#f4fff7",
+    activeBorder: "#2f7f3a",
+  },
+  Vegetative: {
+    bg: "#e7f1ff",
+    text: "#245ea8",
+    border: "#9dc0ef",
+    activeBg: "#4f98ff",
+    activeText: "#f5f9ff",
+    activeBorder: "#4f98ff",
+  },
+  Flowering: {
+    bg: "#fff0dc",
+    text: "#a15c00",
+    border: "#f0c27e",
+    activeBg: "#f59e0b",
+    activeText: "#fff8ef",
+    activeBorder: "#f59e0b",
+  },
+  "Pod Fill": {
+    bg: "#f2e8dd",
+    text: "#7a4315",
+    border: "#d7b08e",
+    activeBg: "#e19b42",
+    activeText: "#fff8ef",
+    activeBorder: "#e19b42",
+  },
+};
+
+// Calculate minimum allowed date (120 days ago)
+const getMinAllowedDate = (): string => {
+  const date = new Date();
+  date.setDate(date.getDate() - MAX_BEAN_AGE_DAYS);
+  return date.toISOString().split("T")[0];
+};
+
+const calculateDaysSincePlanting = (plantingDate: string): number => {
+  const planting = new Date(plantingDate);
+  const today = new Date();
+  const diffTime = today.getTime() - planting.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return Math.max(0, diffDays);
+};
+
+// Calculate planting date from days offset
+const calculatePlantingDate = (daysAgo: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString().split("T")[0];
+};
 
 const getStageMeta = (beanAge: number) => {
   if (beanAge <= 14) {
@@ -127,24 +190,28 @@ const getBeanAgePalette = (status: UIStatus) => {
 
 export const BeanAgeConfiguration = ({
   status,
-  defaultBeanAge = 1,
+  machineLocation,
+  defaultBeanAge = new Date().toISOString().split("T")[0],
   onSave,
 }: BeanAgeConfigurationProps) => {
   const palette = getBeanAgePalette(status);
 
-  const [beanAge, setBeanAge] = useState<number>(
-    clampBeanAge(Math.round(defaultBeanAge)),
-  );
+  const [plantingDate, setPlantingDate] = useState<string>(defaultBeanAge);
   const [isSaving, setIsSaving] = useState(false);
 
+  const beanAge = useMemo(
+    () => calculateDaysSincePlanting(plantingDate),
+    [plantingDate],
+  );
   const stageMeta = useMemo(() => getStageMeta(beanAge), [beanAge]);
   const ageProgressPercent = Math.round((beanAge / MAX_BEAN_AGE_DAYS) * 100);
   const milestones = [1, 14, 40, 75, 120];
 
   const handleSave = async () => {
     const payload: BeanAgePayload = {
-      beanAge,
-      updatedAt: new Date().toISOString(),
+      machine_location: machineLocation, // This should ideally come from props or context
+      plantingDate,
+      // updatedAt: new Date().toISOString(),
     };
 
     setIsSaving(true);
@@ -157,12 +224,20 @@ export const BeanAgeConfiguration = ({
     }
   };
 
+  // Handle date input change with validation
+  const handleDateChange = (newDate: string) => {
+    const daysAge = calculateDaysSincePlanting(newDate);
+    if (daysAge <= MAX_BEAN_AGE_DAYS) {
+      setPlantingDate(newDate);
+    }
+  };
+
   return (
     <section
-      className={`${palette.outerBg} h-full w-full px-4 pb-4 pt-4 xl:max-w-105 xl:justify-self-center`}
+      className={`${palette.outerBg} h-full w-full px-4 pb-0.5 pt-0.5 xl:max-w-60 xl:justify-self-center`}
     >
       <div
-        className={`relative flex h-full min-h-72 flex-col overflow-hidden rounded-2xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_8px_24px_rgba(0,0,0,0.10)]`}
+        className={`relative flex h-full min-h-36 flex-col overflow-hidden rounded-2xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_8px_24px_rgba(0,0,0,0.10)]`}
       >
         <div
           className="pointer-events-none absolute -right-12 -top-10 h-32 w-32 rounded-full blur-2xl"
@@ -173,13 +248,13 @@ export const BeanAgeConfiguration = ({
           style={{ backgroundColor: palette.chipBg, opacity: 0.14 }}
         />
 
-        <header className={`${palette.headerBg} px-4 py-4 sm:px-5`}>
+        <header className={`${palette.headerBg} px-4 py-2 sm:px-5`}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className={`text-lg font-bold ${palette.headerTitle}`}>
+              <h2 className={`text-base font-bold ${palette.headerTitle}`}>
                 Beans Age Profile
               </h2>
-              <p className="mt-1 text-[11px] text-[rgba(255,255,255,0.72)]">
+              <p className="mt-0.5 text-[10px] text-[rgba(255,255,255,0.72)]">
                 Growth-stage setup for calibration and farm recommendations.
               </p>
             </div>
@@ -195,25 +270,31 @@ export const BeanAgeConfiguration = ({
           </div>
         </header>
 
-        <div className="px-4 pt-3 sm:px-5">
+        <div className="px-4 pt-1.5 sm:px-5">
           <p
-            className={`text-[10px] font-semibold tracking-[0.06em] ${palette.bodyText}`}
+            className={`text-[9px] font-semibold tracking-[0.06em] ${palette.bodyText}`}
           >
             STAGE PRESETS
           </p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
             {AGE_PRESETS.map((preset) => {
-              const selected = beanAge === preset.day;
+              const selected = beanAge === preset.daysOffset;
+              const presetDate = calculatePlantingDate(preset.daysOffset);
+              const colors = AGE_PRESET_COLORS[preset.label];
               return (
                 <button
                   key={preset.label}
                   type="button"
-                  onClick={() => setBeanAge(preset.day)}
-                  className="rounded-full px-3 py-1 text-[11px] font-semibold transition-all"
+                  onClick={() => setPlantingDate(presetDate)}
+                  className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold transition-all"
                   style={{
-                    backgroundColor: selected ? palette.chipBg : "transparent",
-                    color: selected ? palette.chipText : undefined,
-                    border: `1px solid ${selected ? palette.chipBg : palette.track}`,
+                    backgroundColor: selected ? colors.activeBg : colors.bg,
+                    color: selected ? colors.activeText : colors.text,
+                    border: `1px solid ${selected ? colors.activeBorder : colors.border}`,
+                    boxShadow: selected
+                      ? "0 0 0 2px rgba(255,255,255,0.55), 0 4px 10px rgba(0,0,0,0.10)"
+                      : "none",
+                    transform: selected ? "translateY(-1px)" : "none",
                   }}
                 >
                   {preset.label}
@@ -223,19 +304,19 @@ export const BeanAgeConfiguration = ({
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-5 p-4 sm:p-5">
+        <div className="flex flex-1 flex-col gap-1.5 p-2 sm:p-2.5">
           <div
-            className="grid grid-cols-[auto_1fr] items-center gap-4 rounded-xl border p-3"
+            className="grid grid-cols-[auto_1fr] items-center gap-2.5 rounded-xl border p-2"
             style={{ borderColor: palette.track }}
           >
             <div
-              className="grid h-20 w-20 place-items-center rounded-full"
+              className="grid h-14 w-14 place-items-center rounded-full"
               style={{
                 background: `conic-gradient(${palette.softAccent} ${ageProgressPercent}%, ${palette.track} ${ageProgressPercent}% 100%)`,
               }}
             >
               <div
-                className="grid h-14 w-14 place-items-center rounded-full bg-white/80 text-xs font-bold"
+                className="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-[9px] font-bold"
                 style={{ color: palette.accent }}
               >
                 {ageProgressPercent}%
@@ -243,16 +324,16 @@ export const BeanAgeConfiguration = ({
             </div>
             <div>
               <p
-                className={`text-xs font-semibold tracking-[0.06em] ${palette.bodyTitle}`}
+                className={`text-[10px] font-semibold tracking-[0.06em] ${palette.bodyTitle}`}
               >
                 CURRENT PLANT AGE
               </p>
               <h3
-                className={`mt-1 text-3xl font-extrabold ${palette.bodyTitle}`}
+                className={`mt-0.5 text-xl font-extrabold ${palette.bodyTitle}`}
               >
                 Day {beanAge}
               </h3>
-              <p className={`mt-1 text-xs ${palette.bodyText}`}>
+              <p className={`mt-0.5 text-[10px] ${palette.bodyText}`}>
                 {stageMeta.tip}
               </p>
             </div>
@@ -292,13 +373,40 @@ export const BeanAgeConfiguration = ({
           </div>
 
           <div
-            className="flex items-center gap-2 rounded-xl border p-2"
+            className="rounded-xl border p-1.5"
+            style={{ borderColor: palette.track }}
+          >
+            <label
+              className={`block text-[10px] font-semibold tracking-[0.06em] ${palette.bodyTitle}`}
+              htmlFor="planting-date-input"
+            >
+              SELECT PLANTING DATE
+            </label>
+            <input
+              id="planting-date-input"
+              type="date"
+              value={plantingDate}
+              onChange={(event) => handleDateChange(event.target.value)}
+              min={getMinAllowedDate()}
+              max={new Date().toISOString().split("T")[0]}
+              className="mt-1.5 w-full rounded-md border px-2.5 py-1.5 text-[13px]"
+              style={{
+                borderColor: palette.accent,
+                color: palette.bodyTitle,
+              }}
+            />
+          </div>
+
+          <div
+            className="flex items-center gap-2 rounded-xl border p-1.5"
             style={{ borderColor: palette.track }}
           >
             <button
               type="button"
-              onClick={() => setBeanAge((prev) => clampBeanAge(prev - 1))}
-              className="rounded-md border px-3 py-1.5 text-sm font-bold"
+              onClick={() =>
+                setPlantingDate(calculatePlantingDate(beanAge + 1))
+              }
+              className="rounded-md border px-2.5 py-1 text-[13px] font-bold"
               style={{ borderColor: palette.accent, color: palette.accent }}
               aria-label="Decrease bean age"
             >
@@ -307,14 +415,16 @@ export const BeanAgeConfiguration = ({
 
             <input
               type="range"
-              min={MIN_BEAN_AGE_DAYS}
+              className="h-2 w-full cursor-pointer rounded-lg"
               max={MAX_BEAN_AGE_DAYS}
+              min={0}
               step={1}
               value={beanAge}
               onChange={(event) =>
-                setBeanAge(clampBeanAge(Number(event.target.value)))
+                setPlantingDate(
+                  calculatePlantingDate(Number(event.target.value)),
+                )
               }
-              className="h-2 w-full cursor-pointer rounded-lg"
               style={{
                 accentColor: palette.accent,
                 backgroundColor: palette.track,
@@ -323,8 +433,10 @@ export const BeanAgeConfiguration = ({
 
             <button
               type="button"
-              onClick={() => setBeanAge((prev) => clampBeanAge(prev + 1))}
-              className="rounded-md border px-3 py-1.5 text-sm font-bold"
+              onClick={() =>
+                setPlantingDate(calculatePlantingDate(Math.max(0, beanAge - 1)))
+              }
+              className="rounded-md border px-2.5 py-1 text-[13px] font-bold"
               style={{ borderColor: palette.accent, color: palette.accent }}
               aria-label="Increase bean age"
             >
@@ -332,38 +444,39 @@ export const BeanAgeConfiguration = ({
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="mt-auto w-full rounded-xl px-4 py-3 text-sm font-bold tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-70"
-            style={{
-              backgroundColor: palette.buttonBg,
-              color: palette.buttonText,
-            }}
-            onMouseEnter={(event) => {
-              event.currentTarget.style.backgroundColor = palette.buttonHover;
-            }}
-            onMouseLeave={(event) => {
-              event.currentTarget.style.backgroundColor = palette.buttonBg;
-            }}
-          >
-            {isSaving ? "SAVING AGE..." : "APPLY BEANS AGE PROFILE"}
-          </button>
-
           <div
-            className="rounded-xl border p-3"
+            className="rounded-xl border p-2.5"
             style={{ borderColor: palette.track }}
           >
             <p
-              className={`text-[11px] font-semibold tracking-[0.06em] ${palette.bodyTitle}`}
+              className={`text-[10px] font-semibold tracking-[0.06em] ${palette.bodyTitle}`}
             >
               STAGE INTELLIGENCE
             </p>
-            <p className={`mt-1 text-xs leading-relaxed ${palette.bodyText}`}>
-              This profile calibrates our AI threat detection per growth stage,
-              keeping pest and disease alerts aligned with actual crop maturity.
+            <p
+              className={`mt-1 text-[11px] leading-relaxed ${palette.bodyText}`}
+            >
+              This profile updates your pest and disease warnings based on the
+              growth stage, keeping your crop protected as it matures.
             </p>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="mt-auto w-full rounded-xl px-4 py-2.5 text-sm font-bold tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-70"
+              style={{
+                backgroundColor: palette.buttonBg,
+                color: palette.buttonText,
+              }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.backgroundColor = palette.buttonHover;
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.backgroundColor = palette.buttonBg;
+              }}
+            >
+              {isSaving ? "SAVING AGE..." : "APPLY BEANS AGE PROFILE"}
+            </button>
           </div>
         </div>
       </div>
