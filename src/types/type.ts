@@ -1,10 +1,13 @@
+
 export type TopNavProps = {
   navClassName?: string;
   borderColor?: string;
   descriptionColor?: string;
   dotColor?: string;
   clockBorderColor?: string;
+  clockTextColor?: string;
 };
+
 
 export interface DOt {
   description: string;
@@ -260,3 +263,33 @@ export interface UserProfile {
   email: string;
   phone: string;
 }
+
+
+export interface AlgorithmTestData {
+  Time_of_Day: number;
+  Plant_Age_Days: number;
+  Growth_Stage: string;
+  Max_Temp_C: number;
+  Min_Temp_C: number;
+  Avg_Day_Hum: number;
+  Avg_Night_Hum: number;
+  Soil_Moisture: number;
+  Sunlight_Hours: number;
+  Rain_Level_mm: number;
+  Leaf_Wetness_Hours: number;
+  Cumulative_Stress_Index: number;
+  Hot_Days_Past_10_Days: number;
+  Wet_Nights_Past_10_Days: number;
+  Dry_Soil_Days_Past_10_Days: number;
+  Flooded_Days_Past_10_Days: number;
+  Rainy_Days_Past_10_Days: number;
+  Total_Rain_Volume_mm_Past_10_Days: number;
+}
+
+export interface inputField{
+  label: string;
+    field: keyof AlgorithmTestData;
+    type?: string;
+    step?: string;
+}
+

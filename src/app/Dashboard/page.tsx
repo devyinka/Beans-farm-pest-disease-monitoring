@@ -5,6 +5,7 @@ import TopNav from "@/components/Topnav";
 import { useSocketStatus } from "@/context/socketContext";
 import { useFarmData } from "@/hook/useFarmData";
 import { useAlertHistory } from "@/hook/useAlertHistory";
+import Link from "next/link";
 
 import { mockDisease, mockHealthy, mockPest } from "@/Mock/Mockdata";
 import { remoteConfigDefault } from "@/Mock/RemoteConfig";
@@ -46,7 +47,7 @@ const getStoredMachineLocation = (): string => {
 const DashboardPage = () => {
   // const BACKENDURL =process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
   const { isConnected } = useSocketStatus();
-  const { userProfile } = useUserLoginContext();
+  // const { userProfile } = useUserLoginContext();
 
   const [remoteConfig, setRemoteConfig] =
     useState<RemoteConfig>(remoteConfigDefault);
@@ -141,7 +142,7 @@ const DashboardPage = () => {
 
   //  Create "safe" versions of the data that provide defaults if any fields are missing. This ensures the UI can render without errors even if some data is not yet available from the backend.
   const safeAIData = {
-    ui_status: dashboardData?.AIData?.ui_status ?? "healthy",
+    ui_status: dashboardData?.AIData?.ui_status ?? "healthy",// i will update this to demostrate the different states, but for now default to healthy to show the full UI.
     ui_title: dashboardData?.AIData?.ui_title ?? "Monitoring...",
     confidence: dashboardData?.AIData?.confidence ?? 0,
     description: dashboardData?.AIData?.description ?? "Fetching analysis...",
@@ -304,7 +305,7 @@ const DashboardPage = () => {
         <h3 className="mb-3 text-sm font-bold tracking-[0.08em] text-[#5c6672] uppercase">
           Farm Monitoring Insights
         </h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:items-stretch">
           <Solution farmData={dashboardData} status={status} />
           <Alerthistory
             AlertHistory={alertHistory}
@@ -325,7 +326,7 @@ const DashboardPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:items-stretch">
           <RemoteConfiguration
             status={status}
             defaultConfidence={remoteConfig.aiConfidence}
@@ -342,12 +343,22 @@ const DashboardPage = () => {
         </div>
 
         <div className="mt-4">
+          <Link
+            href="/Dashboard/test"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-[#67b978] to-[#2f7f3a] text-[#f4fff7] font-semibold text-sm rounded-lg hover:shadow-lg transition-all duration-300 hover:shadow-[#2f7f3a]/50 hover:scale-105 active:scale-95 w-full justify-center"
+          >
+            <span className="hidden sm:inline">Test Algorithm Prediction</span>
+            <span className="sm:hidden">Test Algorithm</span>
+          </Link>
+        </div>
+
+        {/* <div className="mt-4">
           <ThresholdConfiguration
             status={status}
             defaultThresholds={thresholdConfig}
             onSave={handleThresholdSave}
           />
-        </div>
+        </div> */}
       </section>
     </div>
   );

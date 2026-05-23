@@ -8,6 +8,7 @@ import {
   ESP32ANDAIconfiguration,
 } from "@/types/type";
 import { useUserLoginContext } from "@/context/userLogincontex";
+import { SprayControls } from "./SprayControls";
 
 const getRemoteConfigPalette = (status: UIStatus) => {
   const palettes: Record<
@@ -40,9 +41,9 @@ const getRemoteConfigPalette = (status: UIStatus) => {
       labelText: "text-[#1c4a2b]",
       subText: "text-[#4f7059]",
       sliderAccent: "#2f7f3a",
-      buttonBg: "#67b978",
+      buttonBg: "#2f7f3a",
       buttonText: "#f4fff7",
-      buttonHover: "#579f66",
+      buttonHover: "#3f9a4e",
       selectBorder: "border-[#d4dfcd]",
       selectText: "text-[#234930]",
       inputTrack: "#d3dfcc",
@@ -91,7 +92,7 @@ const getRemoteConfigPalette = (status: UIStatus) => {
 };
 
 const clampConfidence = (value: number) => Math.min(100, Math.max(50, value));
-const POLLING_INTERVAL_OPTIONS = [5, 10, 15, 30, 45, 60, 120];
+const POLLING_INTERVAL_OPTIONS = [1, 10, 15, 30, 45, 60, 120];
 const QUICK_REMOTE_PROFILES = [
   { label: "Conservative", confidence: 90, interval: 45 },
   { label: "Balanced", confidence: 80, interval: 30 },
@@ -134,6 +135,7 @@ export const RemoteConfiguration = ({
   }, [aiConfidence]);
 
   const wakeProfile = useMemo(() => {
+    if (intervalMinutes === 1) return "Demo";
     if (intervalMinutes <= 10) return "High Frequency";
     if (intervalMinutes <= 30) return "Recommended";
     return "Power Saver";
@@ -159,7 +161,7 @@ export const RemoteConfiguration = ({
 
   return (
     <section
-      className={`${palette.outerBg} h-full w-full px-4 pb-0.5 pt-0.5 xl:max-w-105 xl:justify-self-center`}
+      className={`${palette.outerBg} h-full w-full px-4 pb-0.5 pt-0.5`}
     >
       <div
         className={`relative flex h-full min-h-36 flex-col overflow-hidden rounded-2xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_8px_24px_rgba(0,0,0,0.10)]`}
@@ -177,10 +179,10 @@ export const RemoteConfiguration = ({
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className={`text-base font-bold ${palette.headerTitle}`}>
-                Remote Control Deck
+                Farm Control
               </h2>
               <p className="mt-0.5 text-[10px] text-[rgba(255,255,255,0.72)]">
-                ESP32 runtime behavior and AI alert tuning.
+                polling, AI-prediction and spraying control control
               </p>
             </div>
             <span
@@ -337,6 +339,16 @@ export const RemoteConfiguration = ({
               </span>
             </div>
           </div>
+           <div className="mt-3">
+            <SprayControls
+              machineLocation={machineLocation}
+              palette={{
+                buttonBg: palette.buttonBg,
+                buttonText: palette.buttonText,
+                buttonHover: palette.buttonHover,
+              }}
+            />
+          </div>
 
           <button
             type="button"
@@ -356,6 +368,8 @@ export const RemoteConfiguration = ({
           >
             {isSaving ? "SAVING..." : "APPLY ESP32 SETTINGS"}
           </button>
+
+         
         </div>
       </div>
     </section>

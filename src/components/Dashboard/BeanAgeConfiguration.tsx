@@ -144,9 +144,9 @@ const getBeanAgePalette = (status: UIStatus) => {
       bodyText: "text-[#4f7059]",
       chipBg: "#2d5f35",
       chipText: "#a6f6bb",
-      buttonBg: "#67b978",
+      buttonBg: "#2f7f3a",
       buttonText: "#f4fff7",
-      buttonHover: "#579f66",
+      buttonHover: "#3f9a4e",
       track: "#d3dfcc",
     },
     disease: {
@@ -234,7 +234,7 @@ export const BeanAgeConfiguration = ({
 
   return (
     <section
-      className={`${palette.outerBg} h-full w-full px-4 pb-0.5 pt-0.5 xl:max-w-60 xl:justify-self-center`}
+      className={`${palette.outerBg} h-full w-full px-4 pb-0.5 pt-0.5`}
     >
       <div
         className={`relative flex h-full min-h-36 flex-col overflow-hidden rounded-2xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_8px_24px_rgba(0,0,0,0.10)]`}

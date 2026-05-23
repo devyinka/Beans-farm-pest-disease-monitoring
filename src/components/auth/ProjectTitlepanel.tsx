@@ -36,10 +36,10 @@ const AuthProjectPanel = () => {
 
         <div className="mb-10 grid grid-cols-2 gap-2.5">
           {[
-            ["🌡", "6 Live sensors", "Temp, humidity, soil moisture"],
+            ["🌡", " 5 Live sensors", "Temp, humidity, soil moisture"],
             ["🤖", "ML prediction", "Random Forest accuracy"],
             ["📡", "GSM / SIM800L", "Works on major networks"],
-            ["☀", "Solar powered", "24/7 operation"],
+            ["🔫", "Remote spraying control","Automated pest management"],
           ].map(([icon, title, desc]) => (
             <div
               key={title}

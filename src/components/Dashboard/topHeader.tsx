@@ -20,12 +20,15 @@ export const DotNameDescription = ({
       ></div>
       <div>
         <div
-          className="text-[13px] font-bold tracking-[0.02em]"
+          className="text-base sm:text-lg md:text-xl font-bold tracking-[0.02em]"
           style={{ color: titleColor }}
         >
           BeanFarm Monitor
         </div>
-        <div className="text-[10px] text-[rgba(255,255,255,0.35)] mt-px tracking-[0.04em]">
+        <div
+          className="text-[10px] sm:text-xs md:text-sm font-semibold mt-1 sm:mt-2 tracking-[0.04em]"
+          style={{ color: titleColor }}
+        >
           {description}
         </div>
       </div>

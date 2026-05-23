@@ -104,10 +104,10 @@ export const Alerthistory = ({
 
   return (
     <section
-      className={`${palette.outerBg} h-full w-full px-4 pb-4 pt-4 xl:max-w-105 xl:justify-self-center`}
+      className={`${palette.outerBg} h-full w-full px-4 pb-4 pt-4`}
     >
       <div
-        className={`flex h-full min-h-72 flex-col overflow-hidden rounded-xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_2px_8px_rgba(0,0,0,0.08)]`}
+        className={`flex h-full min-h-96 flex-col overflow-hidden rounded-xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_2px_8px_rgba(0,0,0,0.08)]`}
       >
         <div className={`${palette.headerBg} px-4 py-3 sm:px-5`}>
           <div className="flex items-center justify-between gap-3">

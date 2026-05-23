@@ -81,10 +81,10 @@ export const Solution = ({ farmData, status }: solutionProps) => {
 
   return (
     <section
-      className={`${palette.outerBg} h-full w-full px-4 pb-4 pt-4 xl:max-w-105 xl:justify-self-center`}
+      className={`${palette.outerBg} h-full w-full px-4 pb-4 pt-4`}
     >
       <div
-        className={`flex h-full min-h-72 flex-col rounded-xl border-2 ${palette.borderColor} ${palette.cardBg} p-4 shadow-[0_2px_8px_rgba(0,0,0,0.08)]`}
+        className={`flex h-full min-h-96 flex-col rounded-xl border-2 ${palette.borderColor} ${palette.cardBg} p-4 shadow-[0_2px_8px_rgba(0,0,0,0.08)]`}
       >
         {/* Header Label */}
         <div
