@@ -74,7 +74,12 @@ const DashboardPage = () => {
     isLoading: isAlertHistoryLoading,
   } = useAlertHistory();
 
-  const [seedLocation] = useState<string>(getStoredMachineLocation);
+  const [seedLocation, setSeedLocation] = useState<string>("");
+
+  // Initialize seed location on client only to avoid hydration mismatch
+  useEffect(() => {
+    setSeedLocation(getStoredMachineLocation());
+  }, []);
 
   const machineLocation = farmData?.farmInfo?.name?.trim() || seedLocation;
   // const machineLocation = userProfile?.machineLocation?.trim();
@@ -130,7 +135,7 @@ const DashboardPage = () => {
 
   if (!farmData) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center" suppressHydrationWarning>
         <p className="text-gray-500 font-semibold">Loading farm data...</p>
       </div>
     );

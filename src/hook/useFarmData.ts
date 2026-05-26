@@ -69,10 +69,11 @@ const getStoredMachineLocation = (): string => {
 // Custom hook to manage farm data and chart updates
 export const useFarmData = () => {
   const { userProfile } = useUserLoginContext();
-  // Latest payload from backend Socket.IO event (single source of truth for dashboard cards/status).
+  
+  // Latest payload from backend Socket.IO event
   const [farmData, setFarmData] = useState<FarmUpdatePayload | null>(null);
 
-  // Charts start empty and are seeded from backend MongoDB history on login.
+  // Charts start empty and are seeded from backend MongoDB history on login
   const [chartdata, setChartdata] = useState<ClimateChartPoint[]>([]);
   const [soilchartdata, setSoilChartdata] = useState<SoilChartPoint[]>([]);
   const [currentinterval, setCurrentInterval] = useState<number>(30);
@@ -82,6 +83,7 @@ export const useFarmData = () => {
   const [minituesnext, setMinutesnext] = useState<number>(0);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [seedLocation, setSeedLocation] = useState<string>("");
+  
   const loadedHistoryForLocation = useRef<string | null>(null);
   const loadingHistoryForLocation = useRef<string | null>(null);
   const pendingLiveUpdateRef = useRef<FarmUpdatePayload | null>(null);
@@ -94,7 +96,7 @@ export const useFarmData = () => {
     }
 
     try {
-      const response = await BACKENDAPI.get("/ui/getUI", {
+      const response = await BACKENDAPI.get("/UIStatus/getUI", {
         params: {
           machine_location: locationToFetch,
         },
@@ -108,10 +110,7 @@ export const useFarmData = () => {
           setLastminute(new Date(savedUI.timeStamp).getTime());
         }
       } else {
-        console.error(
-          "Failed to fetch UI configuration: ",
-          response.statusText,
-        );
+        console.error("Failed to fetch UI configuration: ", response.statusText);
       }
     } catch (error) {
       console.error("Failed to fetch UI configuration:", error);
@@ -119,8 +118,7 @@ export const useFarmData = () => {
   }, []);
 
   useEffect(() => {
-    const safeLocation =
-      userProfile?.machineLocation?.trim() || getStoredMachineLocation();
+    const safeLocation = userProfile?.machineLocation?.trim() || getStoredMachineLocation();
 
     if (safeLocation) {
       setSeedLocation(safeLocation);
@@ -128,25 +126,18 @@ export const useFarmData = () => {
     }
   }, [userProfile?.machineLocation, getUI]);
 
-  // Append a new live data point to the charts, trimming old points outside the history window.
+  // LEAN appendLivePoint: Strictly trusts the structured MongoDB format
   const appendLivePoint = useCallback((data: FarmUpdatePayload) => {
     setChartdata((prev) => {
       const previousPoint = prev[prev.length - 1];
 
       const nextPoint: ClimateChartPoint = {
-        timeStamp: data.timestamp,
-        temp: Number(
-          getSensorValue(data.sensors, "temp", previousPoint?.temp ?? 0),
-        ),
-        hum: Number(
-          getSensorValue(data.sensors, "hum", previousPoint?.hum ?? 0),
-        ),
-        soil: Number(
-          getSensorValue(data.sensors, "soil", previousPoint?.soil ?? 0),
-        ),
-        alert:
-          data?.AIData?.sms_alert_sent || data?.AIData?.ui_status !== "healthy",
-        status: data?.AIData?.ui_status ?? "healthy",
+        timeStamp: data.timeStamp,
+        temp: Number(getSensorValue(data.sensors, "temp", previousPoint?.temp ?? 0)),
+        hum: Number(getSensorValue(data.sensors, "hum", previousPoint?.hum ?? 0)),
+        soil: Number(getSensorValue(data.sensors, "soil", previousPoint?.soil ?? 0)),
+        alert: data.AIData.sms_alert_sent || data.AIData.ui_status !== "healthy",
+        status: data.AIData.ui_status,
       };
 
       return trimToHistoryWindow([...prev, nextPoint]);
@@ -156,13 +147,10 @@ export const useFarmData = () => {
       const previousPoint = prev[prev.length - 1];
 
       const nextPoint: SoilChartPoint = {
-        timeStamp: data.timestamp,
-        soil: Number(
-          getSensorValue(data.sensors, "soil", previousPoint?.soil ?? 0),
-        ),
-        alert:
-          data?.AIData?.sms_alert_sent || data?.AIData?.ui_status !== "healthy",
-        status: data?.AIData?.ui_status ?? "healthy",
+        timeStamp: data.timeStamp,
+        soil: Number(getSensorValue(data.sensors, "soil", previousPoint?.soil ?? 0)),
+        alert: data.AIData.sms_alert_sent || data.AIData.ui_status !== "healthy",
+        status: data.AIData.ui_status,
       };
 
       return trimToHistoryWindow([...prev, nextPoint]);
@@ -174,10 +162,7 @@ export const useFarmData = () => {
       machineLocation: string,
       status: FarmUpdatePayload["AIData"]["ui_status"],
     ) => {
-      // Load the initial 24-hour series only once per farm location.
-      if (!machineLocation) {
-        return;
-      }
+      if (!machineLocation) return;
 
       if (
         loadedHistoryForLocation.current === machineLocation ||
@@ -212,7 +197,6 @@ export const useFarmData = () => {
           toSoilPoint(reading, status),
         );
 
-        // Replace the empty chart state with real MongoDB history before live socket updates arrive.
         setChartdata(historicalClimate);
         setSoilChartdata(historicalSoil);
 
@@ -224,7 +208,6 @@ export const useFarmData = () => {
           readings.length,
         );
 
-        // If a live update arrived while we were loading the history, append it now so we don't lose any data points.
         if (pendingLiveUpdateRef.current) {
           const pendingUpdate = pendingLiveUpdateRef.current;
           pendingLiveUpdateRef.current = null;
@@ -240,44 +223,21 @@ export const useFarmData = () => {
     [appendLivePoint],
   );
 
-  //Handle incoming Socket.IO farm updates from the backend and merge them safely with existing state to keep the dashboard in sync without losing data.
+  // LEAN onfarmupdate: Overwrites state cleanly based on exact backend schema
   const onfarmupdate = useCallback(
     (data: FarmUpdatePayload) => {
-      // Merge incoming farm update with existing state, ensuring we don't overwrite important fields if they're missing in the socket payload.
-      setFarmData((prevState) => ({
-        ...data,
-        farmInfo: data.farmInfo ||
-          prevState?.farmInfo || {
-            name: "Unknown Location",
-            location: "Unknown Location",
-          },
-        AIData: data.AIData ||
-          prevState?.AIData || {
-            ui_status: "healthy",
-            ui_title: "Awaiting Data",
-            spray_action: "No action required.",
-            description: "Fetching latest analysis...",
-            confidence: 0,
-            sms_alert_sent: false,
-          },
-        sensors: data.sensors || prevState?.sensors || [],
-      }));
+      setFarmData(data);
 
       const activeInterval = data.datainterval || currentinterval;
       setCurrentInterval(activeInterval);
 
-      // Keep the dashboard timers in sync
-      setLastminute(Date.now());
+      setLastminute(new Date(data.timeStamp).getTime());
       setMinutesago(0);
       setMinutesnext(activeInterval);
 
-      // Safely extract machine location, falling back to previous state if missing in socket
-      const incomingLocation = data.farmInfo?.name?.trim();
+      const incomingLocation = data.machine_location;
 
-      if (
-        !incomingLocation ||
-        loadedHistoryForLocation.current !== incomingLocation
-      ) {
+      if (!incomingLocation || loadedHistoryForLocation.current !== incomingLocation) {
         pendingLiveUpdateRef.current = data;
         return;
       }
@@ -287,13 +247,12 @@ export const useFarmData = () => {
     [appendLivePoint, currentinterval],
   );
 
-  // Listen for backend "farmupdate" events and feed the live pipeline above.
   useSocket(FarmSocket, "farmupdate", onfarmupdate);
 
   useEffect(() => {
     const machineLocation = farmData?.farmInfo?.name?.trim() || seedLocation;
-
     const liveStatus = farmData?.AIData?.ui_status ?? "healthy";
+    
     if (!machineLocation) return;
 
     void loadHistoryForLocation(machineLocation, liveStatus);
@@ -316,6 +275,7 @@ export const useFarmData = () => {
       setMinutesago(diffminutes);
       setMinutesnext(Math.max(0, currentinterval - diffminutes));
     }, 60000);
+    
     return () => clearInterval(Timer);
   }, [currentinterval, lastminue]);
 

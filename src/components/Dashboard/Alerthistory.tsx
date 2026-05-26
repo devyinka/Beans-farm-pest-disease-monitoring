@@ -89,7 +89,7 @@ export const Alerthistory = ({
       },
     };
 
-    return palette[itemStatus];
+    return palette[itemStatus] ?? palette.healthy;
   };
 
   // Format timestamps into a compact dashboard-friendly label.
@@ -143,7 +143,7 @@ export const Alerthistory = ({
               const item = getItemStyles(alert.status);
               return (
                 <div
-                  key={`${alert.timestamp}-${index}`}
+                  key={`${alert.timeStamp}-${index}`}
                   className="flex items-start gap-3 px-4 py-4 sm:px-5"
                 >
                   <span
@@ -156,7 +156,7 @@ export const Alerthistory = ({
                       {alert.farmstatus}
                     </div>
                     <div className={`text-xs ${palette.rowMeta}`}>
-                      {formatTime(alert.timestamp)}
+                      {formatTime(alert.timeStamp)}
                       <span className="mx-1">—</span>
                       {alert.smsAlertSent ? "SMS ✓" : "no SMS sent"}
                     </div>

@@ -87,7 +87,8 @@ export type RawSensorHistoryRecord = {
 };
 
 export type FarmUpdatePayload = {
-  timestamp: string;
+  machine_location: string;
+  timeStamp: string;
   datainterval?: number;
   sensors: SensorReading[];
   AIData: {
@@ -192,7 +193,7 @@ export type UIStatus = "healthy" | "disease" | "pest";
 export type AlertHistoryItem = {
   farmstatus: string;
   smsAlertSent: boolean;
-  timestamp: string;
+  timeStamp: string;
   status: UIStatus;
 };
 
@@ -266,6 +267,7 @@ export interface UserProfile {
 
 
 export interface AlgorithmTestData {
+  machine_location: string;
   Time_of_Day: number;
   Plant_Age_Days: number;
   Growth_Stage: string;

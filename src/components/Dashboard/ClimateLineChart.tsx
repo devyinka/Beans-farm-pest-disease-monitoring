@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   Area,
   AreaChart,
@@ -142,16 +143,22 @@ export const ClimateLineChart = ({
   const colors = getChartColorScheme(status);
   const surface = getSurfaceScheme(status);
 
-  const chartData = data
-    .map((point) => {
-      const rawDate = point.timeStamp;
-      return {
-        ...point,
-        timeMs: rawDate ? new Date(rawDate).getTime() : Date.now(),
-      };
-    })
-    .sort((a, b) => a.timeMs - b.timeMs)
-    .filter((point) => !isNaN(point.timeMs));
+  const chartData = useMemo(() => {
+    // Use a fixed fallback timestamp instead of Date.now() to ensure consistency
+    // This prevents hydration mismatches between server and client renders
+    const fallbackTime = 0;
+    
+    return data
+      .map((point) => {
+        const rawDate = point.timeStamp;
+        return {
+          ...point,
+          timeMs: rawDate ? new Date(rawDate).getTime() : fallbackTime,
+        };
+      })
+      .sort((a, b) => a.timeMs - b.timeMs)
+      .filter((point) => !isNaN(point.timeMs));
+  }, [data]);
 
   const alertPoints = chartData.filter((point) => point.alert);
 
