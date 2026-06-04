@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -142,6 +142,11 @@ export const ClimateLineChart = ({
 }: ClimateLineChartProps) => {
   const colors = getChartColorScheme(status);
   const surface = getSurfaceScheme(status);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const chartData = useMemo(() => {
     // Use a fixed fallback timestamp instead of Date.now() to ensure consistency
@@ -185,7 +190,7 @@ export const ClimateLineChart = ({
           </span>
         </div>
 
-        <div className="h-96 w-full sm:h-105">
+        <div className="h-64 w-full sm:h-105">
           {isLoading && data.length === 0 ? (
             <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-[#c7ced8] bg-white/60 px-4 text-center">
               <div>
@@ -194,6 +199,17 @@ export const ClimateLineChart = ({
                 </p>
                 <p className="mt-1 text-xs text-[#6a7586]">
                   Fetching database readings before live updates continue.
+                </p>
+              </div>
+            </div>
+          ) : !isMounted ? (
+            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-[#c7ced8] bg-white/60 px-4 text-center">
+              <div>
+                <p className="text-sm font-semibold text-[#465163]">
+                  Preparing chart...
+                </p>
+                <p className="mt-1 text-xs text-[#6a7586]">
+                  Waiting for the dashboard layout to mount.
                 </p>
               </div>
             </div>

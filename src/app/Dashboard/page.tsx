@@ -7,7 +7,6 @@ import { useFarmData } from "@/hook/useFarmData";
 import { useAlertHistory } from "@/hook/useAlertHistory";
 import Link from "next/link";
 
-import { mockDisease, mockHealthy, mockPest } from "@/Mock/Mockdata";
 import { remoteConfigDefault } from "@/Mock/RemoteConfig";
 
 import {
@@ -23,17 +22,14 @@ import {
 import ClimateLineChart from "@/components/Dashboard/ClimateLineChart";
 import {
   AlertStrip,
-  Header,
   SensorGrid,
 } from "@/components/Dashboard/topHeader";
 import { FarmstatusBox } from "@/components/Dashboard/Farmstatusbox";
 import { STATUS_STYLES } from "@/types/UIStstus";
 import { Solution } from "@/components/Dashboard/Solution";
 import { Alerthistory } from "@/components/Dashboard/Alerthistory";
-import { RemoteConfiguration } from "@/components/Dashboard/RemoteConfiguration";
-import { BeanAgeConfiguration } from "@/components/Dashboard/BeanAgeConfiguration";
-import { ThresholdConfiguration } from "@/components/Dashboard/ThresholdConfiguration";
-import { useUserLoginContext } from "@/context/userLogincontex";
+import DashboardSettingsDrawer from "@/components/Dashboard/DashboardSettingsDrawer";
+import DashboardActionCenter from "@/components/Dashboard/DashboardActionCenter";
 
 import BACKENDAPI from "@/API";
 
@@ -63,6 +59,7 @@ const DashboardPage = () => {
   const [configIntervalMinutes, setConfigIntervalMinutes] = useState<
     number | null
   >(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Live values supplied by the socket hook (no mock fallback).
   const { farmData, chartdata, minutesago, minituesnext, isHistoryLoading } =
@@ -245,27 +242,27 @@ const DashboardPage = () => {
   };
 
   return (
-    <div>
+    <div className="bg-[#eef2eb]">
       <TopNav
         navClassName={ui.topNavTheme}
         borderColor={ui.topNavBorder}
         dotColor={ui.topNavDot}
         descriptionColor={ui.topNavTitle}
         clockBorderColor={ui.topNavClockBorder}
-      />
-      <div className={`${ui.dividerBg} py-4`}></div>
-
-      <Header
-        description={safeLocationName}
-        theme={ui.headerTheme}
-        dotColor={ui.dotColor}
-        titleColor={ui.headerTitleColor}
-        readingColor={ui.readingColor}
-        lastReading={displayLastReading}
-        nextReading={displayNextReading}
+        endContent={
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-semibold tracking-[0.08em] text-white transition hover:bg-white/14"
+          >
+            <span className="text-sm leading-none">⚙</span>
+            Settings
+          </button>
+        }
       />
 
       <FarmstatusBox
+        status={status}
         imageurl={ui.image}
         AIconfidence={Math.round(safeAIData.confidence)}
         statusLabel={ui.statusLabel}
@@ -278,6 +275,9 @@ const DashboardPage = () => {
         confidenceLabel={ui.confidenceLabel}
         confidenceColor={ui.confidenceColor}
         predictionLabel={ui.predictionLabel}
+        machineLocation={safeLocationName}
+        lastReading={displayLastReading}
+        nextReading={displayNextReading}
       />
 
       <AlertStrip
@@ -306,65 +306,42 @@ const DashboardPage = () => {
         dataSourceLabel={dataSourceLabel}
         isLoading={isHistoryLoading && climateChartData.length === 0}
       />
-      <section className="bg-[#f9f9f9] p-4">
-        <h3 className="mb-3 text-sm font-bold tracking-[0.08em] text-[#5c6672] uppercase">
+      <section className="bg-[#eef2eb] px-4 py-4 sm:px-6">
+        <h3 className="mb-3 text-sm font-bold uppercase text-[#586465]">
           Farm Monitoring Insights
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:items-stretch">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.05fr_0.95fr_0.9fr] lg:items-stretch">
           <Solution farmData={dashboardData} status={status} />
           <Alerthistory
             AlertHistory={alertHistory}
             status={status}
             isLoading={isAlertHistoryLoading}
           />
+          <DashboardActionCenter machineLocation={safeLocationName} status={status} />
         </div>
       </section>
 
-      <section className="bg-[#eef1f5] px-4 py-5">
-        <div className="mb-3">
-          <h3 className="text-sm font-bold tracking-[0.08em] text-[#4a5565] uppercase">
-            ESP32 Installation & Farm Setup
-          </h3>
-          <p className="mt-1 text-xs text-[#6a7382]">
-            These controls are for system setup and commissioning, separate from
-            live monitoring data.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:items-stretch">
-          <RemoteConfiguration
-            status={status}
-            defaultConfidence={remoteConfig.aiConfidence}
-            defaultIntervalMinutes={remoteConfig.sensorPollingRateMinutes}
-            machineLocation={machineLocation}
-            onSave={handleRemoteSettingsSave}
-          />
-          <BeanAgeConfiguration
-            status={status}
-            defaultBeanAge={remoteConfig.BeanAge}
-            onSave={handleBeanAgeSave}
-            machineLocation={machineLocation}
-          />
-        </div>
-
-        <div className="mt-4">
+      <section className="bg-[#f4f6f2] px-4 py-5 sm:px-6">
+        <div className="mt-0">
           <Link
             href="/Dashboard/test"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-[#67b978] to-[#2f7f3a] text-[#f4fff7] font-semibold text-sm rounded-lg hover:shadow-lg transition-all duration-300 hover:shadow-[#2f7f3a]/50 hover:scale-105 active:scale-95 w-full justify-center"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-linear-to-r from-[#67b978] to-[#2f7f3a] px-4 py-2.5 text-sm font-semibold text-[#f4fff7] transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#2f7f3a]/50 active:scale-95"
           >
             <span className="hidden sm:inline">Test Algorithm Prediction</span>
             <span className="sm:hidden">Test Algorithm</span>
           </Link>
         </div>
-
-        {/* <div className="mt-4">
-          <ThresholdConfiguration
-            status={status}
-            defaultThresholds={thresholdConfig}
-            onSave={handleThresholdSave}
-          />
-        </div> */}
       </section>
+
+      <DashboardSettingsDrawer
+        open={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        status={status}
+        machineLocation={machineLocation}
+        remoteConfig={remoteConfig}
+        onRemoteSettingsSave={handleRemoteSettingsSave}
+        onBeanAgeSave={handleBeanAgeSave}
+      />
     </div>
   );
 };

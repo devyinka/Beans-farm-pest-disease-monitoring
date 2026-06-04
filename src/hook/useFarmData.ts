@@ -82,7 +82,9 @@ export const useFarmData = () => {
   const [minutesago, setMinutesago] = useState<number>(0);
   const [minituesnext, setMinutesnext] = useState<number>(0);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
-  const [seedLocation, setSeedLocation] = useState<string>("");
+  const [seedLocation, setSeedLocation] = useState<string>(
+    getStoredMachineLocation(),
+  );
   
   const loadedHistoryForLocation = useRef<string | null>(null);
   const loadingHistoryForLocation = useRef<string | null>(null);
@@ -118,13 +120,13 @@ export const useFarmData = () => {
   }, []);
 
   useEffect(() => {
-    const safeLocation = userProfile?.machineLocation?.trim() || getStoredMachineLocation();
+    const safeLocation = userProfile?.machineLocation?.trim() || seedLocation;
 
     if (safeLocation) {
       setSeedLocation(safeLocation);
       getUI(safeLocation);
     }
-  }, [userProfile?.machineLocation, getUI]);
+  }, [userProfile?.machineLocation, seedLocation, getUI]);
 
   // LEAN appendLivePoint: Strictly trusts the structured MongoDB format
   const appendLivePoint = useCallback((data: FarmUpdatePayload) => {

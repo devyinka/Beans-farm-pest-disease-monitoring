@@ -1,4 +1,6 @@
 
+import type { ReactNode } from "react";
+
 export type TopNavProps = {
   navClassName?: string;
   borderColor?: string;
@@ -6,6 +8,7 @@ export type TopNavProps = {
   dotColor?: string;
   clockBorderColor?: string;
   clockTextColor?: string;
+  endContent?: ReactNode;
 };
 
 
@@ -25,6 +28,7 @@ export interface header {
 }
 
 export interface farmStatusBox {
+  status: UIStatus;
   imageurl: string;
   AIconfidence: number;
   statusLabel: string;
@@ -37,6 +41,9 @@ export interface farmStatusBox {
   confidenceLabel: string;
   confidenceColor: string;
   predictionLabel: string;
+  machineLocation?: string;
+  lastReading?: number;
+  nextReading?: number;
 }
 
 export interface alertStrip {

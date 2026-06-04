@@ -8,7 +8,6 @@ import {
   ESP32ANDAIconfiguration,
 } from "@/types/type";
 import { useUserLoginContext } from "@/context/userLogincontex";
-import { SprayControls } from "./SprayControls";
 
 const getRemoteConfigPalette = (status: UIStatus) => {
   const palettes: Record<
@@ -361,17 +360,6 @@ export const RemoteConfiguration = ({
                   </span>
                 </div>
               </div>
-              <div className="mt-3">
-                <SprayControls
-                  machineLocation={machineLocation}
-                  palette={{
-                    buttonBg: palette.buttonBg,
-                    buttonText: palette.buttonText,
-                    buttonHover: palette.buttonHover,
-                  }}
-                />
-              </div>
-
               <button
                 type="button"
                 onClick={handleSave}

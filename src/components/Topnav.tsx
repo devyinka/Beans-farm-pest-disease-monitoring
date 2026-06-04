@@ -10,6 +10,7 @@ const TopNav = ({
   dotColor = "rgba(184,147,255,0.2)",
   clockBorderColor = "rgba(184,147,255,0.18)",
   clockTextColor = "#FFFFFF",
+  endContent,
 }: TopNavProps) => {
   return (
     <div
@@ -22,10 +23,15 @@ const TopNav = ({
         dotColor={dotColor}
       />
       <div
-        className="flex items-center justify-end pr-2 pl-2 font-medium font-sans border-l self-stretch"
+        className="flex h-full items-stretch justify-end border-l pr-2 pl-2 font-medium font-sans"
         style={{ borderColor: clockBorderColor, color: clockTextColor }}
       >
-        <Clock />
+        <div className="flex items-center gap-3 pr-2">
+          {endContent}
+        </div>
+        <div className="flex items-center justify-end self-stretch border-l pl-2">
+          <Clock />
+        </div>
       </div>
     </div>
   );

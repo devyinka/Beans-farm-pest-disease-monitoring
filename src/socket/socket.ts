@@ -8,7 +8,7 @@ export const FarmSocket = io(BACKENDURL, {
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 2000,
-  transports: ["websocket"],
+  transports: ["polling", "websocket"],
   withCredentials: true,
 });
 

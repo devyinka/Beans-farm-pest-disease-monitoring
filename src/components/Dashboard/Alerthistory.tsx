@@ -107,7 +107,7 @@ export const Alerthistory = ({
       className={`${palette.outerBg} h-full w-full px-4 pb-4 pt-4`}
     >
       <div
-        className={`flex h-full min-h-96 max-h-105 flex-col overflow-hidden rounded-xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_2px_8px_rgba(0,0,0,0.08)]`}
+        className={`flex h-full min-h-72 max-h-88 flex-col overflow-hidden rounded-xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_2px_8px_rgba(0,0,0,0.08)] sm:min-h-96 sm:max-h-96`}
       >
         <div className={`${palette.headerBg} px-4 py-3 sm:px-5`}>
           <div className="flex items-center justify-between gap-3">
