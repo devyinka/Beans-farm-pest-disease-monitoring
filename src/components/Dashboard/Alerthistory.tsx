@@ -107,7 +107,7 @@ export const Alerthistory = ({
       className={`${palette.outerBg} h-full w-full px-4 pb-4 pt-4`}
     >
       <div
-        className={`flex h-full min-h-96 flex-col overflow-hidden rounded-xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_2px_8px_rgba(0,0,0,0.08)]`}
+        className={`flex h-full min-h-96 max-h-105 flex-col overflow-hidden rounded-xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_2px_8px_rgba(0,0,0,0.08)]`}
       >
         <div className={`${palette.headerBg} px-4 py-3 sm:px-5`}>
           <div className="flex items-center justify-between gap-3">
@@ -128,7 +128,7 @@ export const Alerthistory = ({
 
         {/* Keep the history scrollable inside the card without stretching the dashboard. */}
         <div
-          className={`flex flex-1 flex-col overflow-y-auto divide-y ${palette.divider}`}
+          className={`flex min-h-0 flex-1 flex-col overflow-y-auto divide-y ${palette.divider}`}
         >
           {isLoading ? (
             <div className="flex flex-1 items-center justify-center px-4 py-6 text-center text-sm text-[#b7d3bc] sm:px-5">
