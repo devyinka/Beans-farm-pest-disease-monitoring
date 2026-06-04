@@ -314,12 +314,12 @@ const handlesettingopen=()=>{
         </h3>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.05fr_0.95fr_0.9fr] lg:items-stretch">
           <Solution farmData={dashboardData} status={status} />
+          <DashboardActionCenter machineLocation={safeLocationName} status={status} />
           <Alerthistory
             AlertHistory={alertHistory}
             status={status}
             isLoading={isAlertHistoryLoading}
           />
-          <DashboardActionCenter machineLocation={safeLocationName} status={status} />
         </div>
       </section>
 
