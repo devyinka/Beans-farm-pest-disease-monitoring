@@ -41,7 +41,6 @@ const getStoredMachineLocation = (): string => {
 
 // Main dashboard page component
 const DashboardPage = () => {
-  // const BACKENDURL =process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001";
   const { isConnected } = useSocketStatus();
   // const { userProfile } = useUserLoginContext();
 
@@ -240,7 +239,10 @@ const DashboardPage = () => {
       setThresholdConfig(payload);
     }
   };
-
+const handlesettingopen=()=>{
+  const nextState=!isSettingsOpen;
+  setIsSettingsOpen(nextState);
+}
   return (
     <div className="bg-[#eef2eb]">
       <TopNav
@@ -252,7 +254,7 @@ const DashboardPage = () => {
         endContent={
           <button
             type="button"
-            onClick={() => setIsSettingsOpen(true)}
+            onClick={handlesettingopen}
             className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-semibold tracking-[0.08em] text-white transition hover:bg-white/14"
           >
             <span className="text-sm leading-none">⚙</span>
