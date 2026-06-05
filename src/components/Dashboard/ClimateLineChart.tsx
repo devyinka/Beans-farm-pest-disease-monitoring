@@ -15,8 +15,6 @@ import {
 } from "recharts";
 import type { ClimateLineChartProps, ChartColorScheme } from "@/types/type";
 
-// const HOUR_MS = 60 * 60 * 1000;
-
 const formatTime = (value: string | number) => {
   const date = new Date(Number(value));
   return date.toLocaleTimeString([], {
@@ -24,6 +22,7 @@ const formatTime = (value: string | number) => {
     minute: "2-digit",
   });
 };
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const cleanPayload = payload.filter((entry: any) =>
@@ -31,25 +30,33 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     );
 
     return (
-      <div className="rounded-xl border border-[#d5dccd] bg-white/95 p-3 shadow-[0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-sm">
-        <p className="mb-2 border-b border-gray-100 pb-1 text-xs font-semibold text-gray-500">
+      <div
+        className="rounded-xl border border-white/20 bg-slate-950/80 p-3.5 shadow-xl backdrop-blur-md transition-all duration-300 min-w-[150px]"
+        style={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
+      >
+        <p className="mb-2 border-b border-white/10 pb-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white/40">
           {formatTime(label)}
         </p>
 
-        {/* We map over 'cleanPayload' instead of the raw 'payload' */}
-        {cleanPayload.map((entry: any, index: number) => (
-          <div
-            key={`tooltip-item-${index}`}
-            className="flex items-center justify-between gap-4 py-0.5 text-sm font-bold"
-            style={{ color: entry.color }}
-          >
-            <span>{entry.name}:</span>
-            <span>
-              {entry.value?.toFixed(0)}{" "}
-              {entry.name === "Temperature" ? "°C" : "%"}
-            </span>
-          </div>
-        ))}
+        <div className="space-y-1.5">
+          {cleanPayload.map((entry: any, index: number) => (
+            <div
+              key={`tooltip-item-${index}`}
+              className="flex items-center justify-between gap-4 text-xs font-semibold"
+            >
+              <span className="text-white/60 font-medium">{entry.name}:</span>
+              <span
+                style={{ color: entry.color }}
+                className="font-mono font-bold text-sm"
+              >
+                {entry.value?.toFixed(1)}
+                <span className="text-[10px] ml-0.5 opacity-80">
+                  {entry.name === "Temperature" ? "°C" : "%"}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -149,10 +156,8 @@ export const ClimateLineChart = ({
   }, []);
 
   const chartData = useMemo(() => {
-    // Use a fixed fallback timestamp instead of Date.now() to ensure consistency
-    // This prevents hydration mismatches between server and client renders
     const fallbackTime = 0;
-    
+
     return data
       .map((point) => {
         const rawDate = point.timeStamp;
@@ -168,48 +173,62 @@ export const ClimateLineChart = ({
   const alertPoints = chartData.filter((point) => point.alert);
 
   return (
-    <section className={`${surface.sectionBg} px-4 pb-4 pt-4 sm:px-6`}>
+    <section
+      className={`${surface.sectionBg} px-4 pb-5 pt-4 sm:px-6 transition-all duration-700 ease-in-out`}
+    >
       <div
-        className={`rounded-2xl border ${surface.border} ${surface.cardBg} p-4 shadow-[0_10px_28px_rgba(0,0,0,0.08)]`}
+        className={`rounded-2xl border ${surface.border} ${surface.cardBg} p-5 md:p-6 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.05),_inset_0_1px_1px_rgba(255,255,255,0.6)] transition-all duration-700 relative overflow-hidden`}
       >
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h3 className={`text-sm font-bold ${surface.title}`}>
-            Environment (Temperature, Humidity, Soil)
+        {/* Top Header Deck Line */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/[0.03]">
+          <h3
+            className={`text-sm md:text-base font-black tracking-tight antialiased ${surface.title}`}
+          >
+            Environment Telemetry{" "}
+            <span className="font-medium opacity-50 text-xs sm:text-sm block sm:inline sm:ml-1">
+              (Temperature, Humidity, Soil)
+            </span>
           </h3>
 
-          <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] ${
-              isConnected ? surface.live : surface.offline
-            }`}
-          >
-            {isConnected ? "LIVE" : "OFFLINE"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`rounded-lg px-2.5 py-1 text-[10px] font-black tracking-[0.12em] border border-black/[0.02] shadow-sm flex items-center gap-1.5 ${
+                isConnected ? surface.live : surface.offline
+              }`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${isConnected ? "bg-current animate-pulse" : "bg-current"}`}
+              />
+              {isConnected ? "LIVE" : "OFFLINE"}
+            </span>
 
-          <span className="rounded-full bg-[#e8ebf0] px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-[#4a5568]">
-            {dataSourceLabel}
-          </span>
+            <span className="rounded-lg bg-white/60 border border-black/[0.04] px-2.5 py-1 text-[10px] font-bold font-mono tracking-wider text-[#4a5568] shadow-sm">
+              {dataSourceLabel}
+            </span>
+          </div>
         </div>
 
-        <div className="h-64 w-full sm:h-105">
+        {/* Responsive Visualization Matrix Core */}
+        <div className="h-64 w-full sm:h-96 relative">
           {isLoading && data.length === 0 ? (
-            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-[#c7ced8] bg-white/60 px-4 text-center">
-              <div>
-                <p className="text-sm font-semibold text-[#465163]">
-                  Loading history...
+            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-black/10 bg-white/40 px-4 text-center backdrop-blur-sm animate-fade-in">
+              <div className="flex flex-col items-center">
+                <div className="w-6 h-6 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-xs font-bold text-slate-700 tracking-wide uppercase font-mono">
+                  Loading telemetry matrix...
                 </p>
-                <p className="mt-1 text-xs text-[#6a7586]">
-                  Fetching database readings before live updates continue.
+                <p className="mt-1 text-xs text-slate-400 max-w-xs leading-relaxed">
+                  Fetching historical data streams before real-time syncing
+                  starts.
                 </p>
               </div>
             </div>
           ) : !isMounted ? (
-            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-[#c7ced8] bg-white/60 px-4 text-center">
-              <div>
-                <p className="text-sm font-semibold text-[#465163]">
-                  Preparing chart...
-                </p>
-                <p className="mt-1 text-xs text-[#6a7586]">
-                  Waiting for the dashboard layout to mount.
+            <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-black/10 bg-white/40 px-4 text-center backdrop-blur-sm">
+              <div className="flex flex-col items-center">
+                <div className="w-5 h-5 border-2 border-slate-300 border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-xs font-bold text-slate-600 tracking-wide uppercase font-mono">
+                  Preparing layout...
                 </p>
               </div>
             </div>
@@ -217,69 +236,107 @@ export const ClimateLineChart = ({
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
-                margin={{ top: 24, right: 8, left: -16, bottom: 4 }}
+                margin={{ top: 12, right: 8, left: -24, bottom: 4 }}
               >
                 <defs>
                   <linearGradient id="tempFill" x1="0" y1="0" x2="0" y2="1">
                     <stop
                       offset="5%"
                       stopColor={colors.area1}
-                      stopOpacity={0.28}
+                      stopOpacity={0.24}
                     />
                     <stop
                       offset="95%"
                       stopColor={colors.area1}
-                      stopOpacity={0.03}
+                      stopOpacity={0.01}
                     />
                   </linearGradient>
                   <linearGradient id="humFill" x1="0" y1="0" x2="0" y2="1">
                     <stop
                       offset="5%"
                       stopColor={colors.area2}
-                      stopOpacity={0.28}
+                      stopOpacity={0.24}
                     />
                     <stop
                       offset="95%"
                       stopColor={colors.area2}
-                      stopOpacity={0.03}
+                      stopOpacity={0.01}
                     />
                   </linearGradient>
                   <linearGradient id="soilFill" x1="0" y1="0" x2="0" y2="1">
                     <stop
                       offset="5%"
                       stopColor={colors.area3}
-                      stopOpacity={0.28}
+                      stopOpacity={0.24}
                     />
                     <stop
                       offset="95%"
                       stopColor={colors.area3}
-                      stopOpacity={0.03}
+                      stopOpacity={0.01}
                     />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" />
+                <CartesianGrid
+                  stroke={colors.grid}
+                  strokeDasharray="4 4"
+                  opacity={0.6}
+                />
 
                 <XAxis
                   type="number"
                   dataKey="timeMs"
                   domain={["dataMin", "dataMax"]}
                   tickFormatter={formatTime}
-                  minTickGap={30}
-                  tick={{ fill: colors.tick, fontSize: 10 }}
+                  minTickGap={40}
+                  tick={{
+                    fill: colors.tick,
+                    fontSize: 10,
+                    fontFamily: "monospace",
+                    fontWeight: "700",
+                  }}
+                  tickLine={false}
+                  axisLine={{ stroke: colors.grid, strokeWidth: 1.5 }}
+                  dy={8}
                 />
 
-                {/* Single, clean Y-Axis for everything */}
                 <YAxis
                   domain={["auto", "auto"]}
-                  tick={{ fill: colors.axis1, fontSize: 10 }}
+                  tick={{
+                    fill: colors.axis1,
+                    fontSize: 11,
+                    fontFamily: "monospace",
+                    fontWeight: "800",
+                  }} // Boosted size & weight for better visibility
+                  tickLine={true} // Enabled tick markers to clearly anchor values
+                  tickSize={5}
+                  stroke={colors.axis1} // Explicitly forces the dynamic condition color onto the line itself
+                  axisLine={{ stroke: colors.axis1, strokeWidth: 2 }} // Strengthened border presence
+                  dx={-6}
                 />
 
                 <Tooltip
                   content={<CustomTooltip />}
-                  cursor={{ stroke: colors.grid, strokeWidth: 2 }}
+                  cursor={{
+                    stroke: colors.grid,
+                    strokeWidth: 1.5,
+                    strokeDasharray: "3 3",
+                  }}
                 />
 
-                <Legend verticalAlign="top" height={24} iconType="circle" />
+                <Legend
+                  verticalAlign="top"
+                  height={36}
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{
+                    fontSize: "11px",
+                    fontFamily: "monospace",
+                    fontWeight: "700",
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    paddingBottom: "12px",
+                  }}
+                />
 
                 <Area
                   type="monotone"
@@ -294,9 +351,9 @@ export const ClimateLineChart = ({
                   dataKey="temp"
                   name="Temperature"
                   stroke={colors.line1}
-                  strokeWidth={1.5}
+                  strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 4, strokeWidth: 0 }}
+                  activeDot={{ r: 5, strokeWidth: 1.5, stroke: "#ffffff" }}
                 />
 
                 <Area
@@ -312,9 +369,9 @@ export const ClimateLineChart = ({
                   dataKey="hum"
                   name="Humidity"
                   stroke={colors.line2}
-                  strokeWidth={1.5}
+                  strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 4, strokeWidth: 0 }}
+                  activeDot={{ r: 5, strokeWidth: 1.5, stroke: "#ffffff" }}
                 />
 
                 <Area
@@ -330,9 +387,9 @@ export const ClimateLineChart = ({
                   dataKey="soil"
                   name="Soil Moisture"
                   stroke={colors.line3}
-                  strokeWidth={1.5}
+                  strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 4, strokeWidth: 0 }}
+                  activeDot={{ r: 5, strokeWidth: 1.5, stroke: "#ffffff" }}
                 />
 
                 {alertPoints.map((point, index) => (

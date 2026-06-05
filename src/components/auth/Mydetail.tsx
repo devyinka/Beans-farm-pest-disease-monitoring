@@ -1,3 +1,7 @@
+"use client";
+
+import React from "react";
+
 const AuthProjectDetailsPanel = () => {
   const projectDetails = [
     ["Name", "Salam Sodiq"],
@@ -11,38 +15,55 @@ const AuthProjectDetailsPanel = () => {
   ];
 
   return (
-    <div className="meta-card mt-4 mb-5 rounded-xl border border-[rgba(184,147,255,0.2)] bg-[rgba(255,255,255,0.04)] p-5">
-      {/* Title */}
-      <div className="meta-title mx-auto mb-4 w-[92%] text-lg font-extrabold tracking-wide text-[rgb(184,147,255)] md:text-xl">
-        Project Details
+    <div
+      className="relative overflow-hidden mt-4 mb-5 rounded-2xl border border-[rgba(184,147,255,0.15)] bg-[rgba(10,8,14,0.6)] backdrop-blur-2xl p-5 md:p-6 transition-all duration-500 group shadow-2xl"
+      style={{
+        boxShadow:
+          "0 20px 40px -15px rgba(184, 147, 255, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.03)",
+      }}
+    >
+      {/* Living Tech Glow Backdrop Aura */}
+      <div className="absolute -top-16 -right-16 h-32 w-32 rounded-full opacity-[0.08] blur-3xl bg-[#b893ff] pointer-events-none" />
+      <div className="absolute -bottom-16 -left-16 h-32 w-32 rounded-full opacity-[0.04] blur-3xl bg-[#b893ff] pointer-events-none" />
+
+      {/* Header Deck */}
+      <div className="flex items-center mx-auto mb-5 w-[94%] border-b border-white/[0.04] pb-3">
+        <div className="text-sm font-black tracking-wide text-[rgb(184,147,255)] antialiased md:text-base">
+          Project Details
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="meta-grid mx-auto w-[92%] space-y-3">
-        {projectDetails.map(([label, value]) => (
-          <div
-            key={label}
-            className="grid w-full grid-cols-[140px_1fr] items-start gap-x-4 text-base md:text-lg"
-          >
-            {/* Label */}
-            <span className="font-semibold text-white/70 max-sm:text-sm">
-              {label}:
-            </span>
+      {/* Structural Data Grid */}
+      <div className="mx-auto w-[94%] space-y-3.5">
+        {projectDetails.map(([label, value]) => {
+          const isProjectTitle = label === "Project Title";
+          const isMatricNo = label === "Matric No";
 
-            {/* Value */}
-            <span
-              className={`font-extrabold text-white/70 leading-relaxed wrap-break-word ${
-                label === "Project Title"
-                  ? "max-sm:text-[12px] max-sm:leading-5"
-                  : label === "Department"
-                    ? "max-sm:text-[13px] max-sm:leading-5"
-                    : "max-sm:text-[12px]"
-              }`}
+          return (
+            <div
+              key={label}
+              className="grid w-full grid-cols-[110px_1fr] sm:grid-cols-[140px_1fr] items-start gap-x-4 border-b border-white/[0.02] last:border-0 pb-2.5 last:pb-0"
             >
-              {value}
-            </span>
-          </div>
-        ))}
+              {/* Data Label */}
+              <span className="font-mono text-[11px] sm:text-xs font-bold tracking-wider text-white/40 uppercase pt-0.5">
+                {label}
+              </span>
+
+              {/* Data Value Output Block */}
+              <span
+                className={`font-semibold text-white/90 leading-relaxed break-words antialiased text-sm md:text-base ${
+                  isProjectTitle
+                    ? "text-[13px] md:text-[15px] font-black text-white leading-snug tracking-tight"
+                    : isMatricNo
+                      ? "font-mono font-bold text-[13px] tracking-wide text-[rgb(184,147,255)]"
+                      : ""
+                }`}
+              >
+                {value}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 "use client";
+
 import { useMemo, useEffect, useState } from "react";
 import AuthTabs from "./AuthTabs";
 import ForgotPanel from "./ForgotPanel";
@@ -6,6 +7,7 @@ import LoginPanel from "./LoginPanel";
 import RegisterPanel from "./RegisterPanel";
 import { useRouter } from "next/navigation";
 import { useUserLoginContext } from "@/context/userLogincontex";
+import { motion, AnimatePresence } from "framer-motion"; // Enhanced cinematic micro-interactions
 
 import BACKENDAPI from "@/API";
 
@@ -87,7 +89,6 @@ const AuthPage = () => {
       });
 
       if (response.status >= 200 && response.status < 300) {
-        // Safely extract token, mirroring your register logic
         const token = response.data?.token ?? response.data?.user?.token;
         if (token) {
           localStorage.setItem("beanfarm_token", token);
@@ -97,7 +98,6 @@ const AuthPage = () => {
 
         setIsLoggedIn(true);
 
-        // Check for either data or user objects to prevent crashes
         const userData = response.data?.user || response.data?.data;
 
         if (userData) {
@@ -113,7 +113,6 @@ const AuthPage = () => {
         setLoginError("Unable to sign in. Please verify your credentials.");
       }
     } catch (error: string | any) {
-      // ADD THIS CONSOLE LOG to see exact JS errors in your browser console!
       console.error("Login Error Breakdown:", error);
 
       const serverMessage =
@@ -194,71 +193,116 @@ const AuthPage = () => {
         setResetSent(true);
       }
     }
-    // setResetSent(true); //for testing
   };
+
   return (
-    <div className="flex w-full flex-col bg-[linear-gradient(180deg,rgba(20,10,34,0.86)_0%,rgba(33,14,57,0.72)_100%)] px-6 py-10 backdrop-blur-[6px] lg:px-9">
-      <AuthTabs
-        activeTab={activeTab === "forgot" ? "login" : activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          setResetSent(false);
-        }}
-      />
+    <div
+      className="relative overflow-hidden flex w-full flex-col bg-gradient-to-b from-[#11091f]/90 to-[#190c2b]/85 border border-white/[0.04] rounded-3xl px-6 py-8 md:p-10 backdrop-blur-3xl shadow-2xl transition-all duration-500"
+      style={{
+        boxShadow:
+          "0 40px 80px -30px rgba(184, 147, 255, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.02)",
+      }}
+    >
+      {/* Dynamic Network Mesh Matrix Backdrop Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_60%,transparent_100%)] pointer-events-none" />
 
-      {activeTab === "login" && (
-        <LoginPanel
-          loginUser={loginUser}
-          loginPass={loginPass}
-          machineLocation={machineLocation}
-          onLoginUserChange={setLoginUser}
-          onLoginPassChange={setLoginPass}
-          onSubmit={handleLogin}
-          onForgot={() => setActiveTab("forgot")}
-          onSwitchRegister={() => setActiveTab("register")}
-          onChangeMachineLocation={setMachineLocation}
-          isSubmitting={isLoginSubmitting}
-          errorMessage={loginError}
-          successMessage={loginSuccess}
-        />
-      )}
+      {/* Layered Cyber Ambient Aura Spheres */}
+      <div className="absolute -top-40 -left-40 h-80 w-80 rounded-full opacity-[0.14] blur-[120px] bg-[#b893ff] pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full opacity-[0.06] blur-[120px] bg-[#4deeea] pointer-events-none" />
 
-      {activeTab === "register" && (
-        <RegisterPanel
-          firstName={firstName}
-          lastName={lastName}
-          email={email}
-          phone={phone}
-          location={location}
-          password={password}
-          confirmPassword={confirmPassword}
-          passwordStrength={passwordStrength}
-          strengthColor={strengthColor}
-          onFirstNameChange={setFirstName}
-          onLastNameChange={setLastName}
-          onEmailChange={setEmail}
-          onPhoneChange={setPhone}
-          onLocationChange={setLocation}
-          onPasswordChange={setPassword}
-          onConfirmPasswordChange={setConfirmPassword}
-          onSubmit={handleRegister}
-          onSwitchLogin={() => setActiveTab("login")}
-          isSubmitting={isLoginSubmitting}
-          errorMessage={loginError}
-          successMessage={loginSuccess}
+      {/* Navigation Tab Header Deck Container */}
+      <div className="relative z-10 w-full mb-6 border-b border-white/[0.04] pb-2">
+        <AuthTabs
+          activeTab={activeTab === "forgot" ? "login" : activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            setResetSent(false);
+          }}
         />
-      )}
+      </div>
 
-      {activeTab === "forgot" && (
-        <ForgotPanel
-          forgotEmail={forgotEmail}
-          resetSent={resetSent}
-          setResetSent={setResetSent}
-          onForgotEmailChange={setForgotEmail}
-          onSubmit={handleForgot}
-          onBackToLogin={() => setActiveTab("login")}
-        />
-      )}
+      {/* Animated Interface Workspace Console */}
+      <div className="relative z-10 w-full flex-1">
+        <AnimatePresence mode="wait">
+          {activeTab === "login" && (
+            <motion.div
+              key="login-panel-node"
+              initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -12, filter: "blur(4px)" }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <LoginPanel
+                loginUser={loginUser}
+                loginPass={loginPass}
+                machineLocation={machineLocation}
+                onLoginUserChange={setLoginUser}
+                onLoginPassChange={setLoginPass}
+                onSubmit={handleLogin}
+                onForgot={() => setActiveTab("forgot")}
+                onSwitchRegister={() => setActiveTab("register")}
+                onChangeMachineLocation={setMachineLocation}
+                isSubmitting={isLoginSubmitting}
+                errorMessage={loginError}
+                successMessage={loginSuccess}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === "register" && (
+            <motion.div
+              key="register-panel-node"
+              initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -12, filter: "blur(4px)" }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <RegisterPanel
+                firstName={firstName}
+                lastName={lastName}
+                email={email}
+                phone={phone}
+                location={location}
+                password={password}
+                confirmPassword={confirmPassword}
+                passwordStrength={passwordStrength}
+                strengthColor={strengthColor}
+                onFirstNameChange={setFirstName}
+                onLastNameChange={setLastName}
+                onEmailChange={setEmail}
+                onPhoneChange={setPhone}
+                onLocationChange={setLocation}
+                onPasswordChange={setPassword}
+                onConfirmPasswordChange={setConfirmPassword}
+                onSubmit={handleRegister}
+                onSwitchLogin={() => setActiveTab("login")}
+                isSubmitting={isLoginSubmitting}
+                errorMessage={loginError}
+                successMessage={loginSuccess}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === "forgot" && (
+            <motion.div
+              key="forgot-panel-node"
+              initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -12, filter: "blur(4px)" }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <ForgotPanel
+                forgotEmail={forgotEmail}
+                resetSent={resetSent}
+                setResetSent={setResetSent}
+                onForgotEmailChange={setForgotEmail}
+                onSubmit={handleForgot}
+                onBackToLogin={() => setActiveTab("login")}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

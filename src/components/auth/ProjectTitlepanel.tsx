@@ -1,5 +1,7 @@
+import HeroHeader from "./heroHeader";
 import AuthLogoBadge from "./Logo";
 import AuthProjectDetailsPanel from "./Mydetail";
+import SmartAgriGrid from "./smartAgricGrid";
 
 const AuthProjectPanel = () => {
   return (
@@ -19,7 +21,7 @@ const AuthProjectPanel = () => {
           />
         </div>
 
-        <p className="mb-4 text-[11px] font-extrabold tracking-[0.16em] uppercase text-(--purple-light)">
+        {/* <p className="mb-4 text-[11px] font-extrabold tracking-[0.16em] uppercase text-(--purple-light)">
           Final Year Project — Telecom Engineering
         </p>
         <h1 className="mb-4 text-4xl leading-[1.1] font-extrabold text-white">
@@ -32,13 +34,15 @@ const AuthProjectPanel = () => {
         <p className="mb-9 max-w-95 text-[13.5px] leading-[1.75] text-[rgba(255,255,255,0.38)]">
           Real-time environmental monitoring with machine learning for early
           detection of pests and diseases.
-        </p>
-
-        <div className="mb-10 grid grid-cols-2 gap-2.5">
+        </p> */}
+        <HeroHeader />
+        <SmartAgriGrid />
+        {/* <div className="mb-10 grid grid-cols-2 gap-2.5">
           {[
-            ["🌡", " 5 Live sensors", "Temp, humidity, soil moisture"],
+            ["🌡", " 5 Live sensors", "Temp, humidity, soil moisture, LDR, Rain"],
             ["🤖", "ML prediction", "Random Forest accuracy"],
-            ["📡", "GSM / SIM800L", "Works on major networks"],
+            ["📊", "Data analytics", "Real-time insights and reports"],
+            ["📱", "Mobile alerts", "Instant notifications for farmers" ],
             ["🔫", "Remote spraying control","Automated pest management"],
           ].map(([icon, title, desc]) => (
             <div
@@ -54,7 +58,7 @@ const AuthProjectPanel = () => {
               </p>
             </div>
           ))}
-        </div>
+        </div> */}
 
         <AuthProjectDetailsPanel />
       </div>
