@@ -35,16 +35,16 @@ export default function HeroHeader() {
       animate="visible"
       className="flex flex-col items-start md:items-center text-left md:text-center w-full select-none relative pt-6 md:pt-12"
     >
-      {/* Background Ambient Glow to keep the canvas feeling rich and lively */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-36 bg-gradient-to-r from-[#b893ff]/10 to-[#4deeea]/5 blur-3xl pointer-events-none rounded-full hidden md:block" />
+      {/* Background Ambient Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-36 bg-linear-to-r from-[#b893ff]/10 to-[#4deeea]/5 blur-3xl pointer-events-none rounded-full hidden md:block" />
 
-      {/* 1. Main Title: Breathing Fade + Dynamic Laser Shimmer */}
+      {/* 1. Main Title */}
       <motion.h1
         variants={itemVariants}
-        className="mb-6 w-full font-sans text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-[1.12] tracking-tight text-white antialiased max-w-4xl animate-pulse [animation-duration:4s]"
+        className="mb-6 w-full font-sans text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-[1.12] tracking-tight text-white antialiased max-w-4xl animate-pulse animation-duration-[4s]"
       >
         Intelligent System for Early{" "}
-        <span className="relative inline-block bg-gradient-to-r from-[#b893ff] via-[#e2d5ff] via-[#4deeea] to-[#b893ff] bg-[length:200%_auto] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(184,147,255,0.35)] [animation:shimmer_5s_linear_infinite] select-none">
+        <span className="relative inline-block bg-linear-to-r from-[#b893ff] via-[#4deeea] to-[#b893ff] bg-size-[200%_auto] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(184,147,255,0.35)] animate-[shimmer_5s_linear_infinite] select-none">
           Pest & Disease Detection
         </span>{" "}
         in Beans Farm.

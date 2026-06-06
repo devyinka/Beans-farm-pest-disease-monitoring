@@ -1,4 +1,3 @@
-
 import type { ReactNode } from "react";
 
 export type TopNavProps = {
@@ -10,7 +9,6 @@ export type TopNavProps = {
   clockTextColor?: string;
   endContent?: ReactNode;
 };
-
 
 export interface DOt {
   description: string;
@@ -241,6 +239,8 @@ export type RemoteConfigurationProps = {
   defaultConfidence?: number;
   defaultIntervalMinutes?: number;
   onSave?: (payload: ESP32ANDAIconfiguration) => void | Promise<void>;
+  isExpanded?: boolean;
+  onToggle?: () => void;
 };
 
 export type BeanAgeConfigurationProps = {
@@ -248,6 +248,8 @@ export type BeanAgeConfigurationProps = {
   defaultBeanAge?: string;
   onSave?: (payload: BeanAgePayload) => void | Promise<void>;
   machineLocation: string;
+  isExpanded?: boolean;
+  onToggle?: () => void;
 };
 
 export type ThresholdPayload = {
@@ -272,7 +274,6 @@ export interface UserProfile {
   phone: string;
 }
 
-
 export interface AlgorithmTestData {
   machine_location: string;
   Time_of_Day: number;
@@ -295,10 +296,9 @@ export interface AlgorithmTestData {
   Total_Rain_Volume_mm_Past_10_Days: number;
 }
 
-export interface inputField{
+export interface inputField {
   label: string;
-    field: keyof AlgorithmTestData;
-    type?: string;
-    step?: string;
+  field: keyof AlgorithmTestData;
+  type?: string;
+  step?: string;
 }
-

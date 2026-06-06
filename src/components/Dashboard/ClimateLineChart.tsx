@@ -31,7 +31,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
     return (
       <div
-        className="rounded-xl border border-white/20 bg-slate-950/80 p-3.5 shadow-xl backdrop-blur-md transition-all duration-300 min-w-[150px]"
+        className="rounded-xl border border-white/20 bg-slate-950/80 p-3.5 shadow-xl backdrop-blur-md transition-all duration-300 min-w-37.5"
         style={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)" }}
       >
         <p className="mb-2 border-b border-white/10 pb-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white/40">
@@ -177,10 +177,10 @@ export const ClimateLineChart = ({
       className={`${surface.sectionBg} px-4 pb-5 pt-4 sm:px-6 transition-all duration-700 ease-in-out`}
     >
       <div
-        className={`rounded-2xl border ${surface.border} ${surface.cardBg} p-5 md:p-6 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.05),_inset_0_1px_1px_rgba(255,255,255,0.6)] transition-all duration-700 relative overflow-hidden`}
+        className={`rounded-2xl border ${surface.border} ${surface.cardBg} p-5 md:p-6 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,0.6)] transition-all duration-700 relative overflow-hidden`}
       >
         {/* Top Header Deck Line */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/[0.03]">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/3">
           <h3
             className={`text-sm md:text-base font-black tracking-tight antialiased ${surface.title}`}
           >
@@ -192,7 +192,7 @@ export const ClimateLineChart = ({
 
           <div className="flex items-center gap-2">
             <span
-              className={`rounded-lg px-2.5 py-1 text-[10px] font-black tracking-[0.12em] border border-black/[0.02] shadow-sm flex items-center gap-1.5 ${
+              className={`rounded-lg px-2.5 py-1 text-[10px] font-black tracking-[0.12em] border border-black/2 shadow-sm flex items-center gap-1.5 ${
                 isConnected ? surface.live : surface.offline
               }`}
             >
@@ -202,7 +202,7 @@ export const ClimateLineChart = ({
               {isConnected ? "LIVE" : "OFFLINE"}
             </span>
 
-            <span className="rounded-lg bg-white/60 border border-black/[0.04] px-2.5 py-1 text-[10px] font-bold font-mono tracking-wider text-[#4a5568] shadow-sm">
+            <span className="rounded-lg bg-white/60 border border-black/4 px-2.5 py-1 text-[10px] font-bold font-mono tracking-wider text-[#4a5568] shadow-sm">
               {dataSourceLabel}
             </span>
           </div>
@@ -306,11 +306,11 @@ export const ClimateLineChart = ({
                     fontSize: 11,
                     fontFamily: "monospace",
                     fontWeight: "800",
-                  }} // Boosted size & weight for better visibility
-                  tickLine={true} // Enabled tick markers to clearly anchor values
+                  }}
+                  tickLine={true}
                   tickSize={5}
-                  stroke={colors.axis1} // Explicitly forces the dynamic condition color onto the line itself
-                  axisLine={{ stroke: colors.axis1, strokeWidth: 2 }} // Strengthened border presence
+                  stroke={colors.axis1}
+                  axisLine={{ stroke: colors.axis1, strokeWidth: 2 }}
                   dx={-6}
                 />
 

@@ -27,7 +27,7 @@ const AuthProjectDetailsPanel = () => {
       <div className="absolute -bottom-16 -left-16 h-32 w-32 rounded-full opacity-[0.04] blur-3xl bg-[#b893ff] pointer-events-none" />
 
       {/* Header Deck */}
-      <div className="flex items-center mx-auto mb-5 w-[94%] border-b border-white/[0.04] pb-3">
+      <div className="flex items-center mx-auto mb-5 w-[94%] border-b border-white/4 pb-3">
         <div className="text-sm font-black tracking-wide text-[rgb(184,147,255)] antialiased md:text-base">
           Project Details
         </div>
@@ -42,7 +42,7 @@ const AuthProjectDetailsPanel = () => {
           return (
             <div
               key={label}
-              className="grid w-full grid-cols-[110px_1fr] sm:grid-cols-[140px_1fr] items-start gap-x-4 border-b border-white/[0.02] last:border-0 pb-2.5 last:pb-0"
+              className="grid w-full grid-cols-[110px_1fr] sm:grid-cols-[140px_1fr] items-start gap-x-4 border-b border-white/2 last:border-0 pb-2.5 last:pb-0"
             >
               {/* Data Label */}
               <span className="font-mono text-[11px] sm:text-xs font-bold tracking-wider text-white/40 uppercase pt-0.5">
@@ -51,7 +51,7 @@ const AuthProjectDetailsPanel = () => {
 
               {/* Data Value Output Block */}
               <span
-                className={`font-semibold text-white/90 leading-relaxed break-words antialiased text-sm md:text-base ${
+                className={`font-semibold text-white/90 leading-relaxed whitespace-normal break-all antialiased text-sm md:text-base ${
                   isProjectTitle
                     ? "text-[13px] md:text-[15px] font-black text-white leading-snug tracking-tight"
                     : isMatricNo

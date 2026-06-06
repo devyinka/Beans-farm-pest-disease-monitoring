@@ -2,26 +2,19 @@
 import BACKENDAPI from "@/API";
 import type { ReactNode } from "react";
 import { useState } from "react";
-
-interface SprayPalette {
-  buttonBg: string;
-  buttonText: string;
-  buttonHover: string;
-}
+import { motion } from "framer-motion";
 
 interface SprayControlsProps {
   machineLocation: string;
-  palette: SprayPalette;
   orientation?: "row" | "stacked";
 }
 
-const SprayPesticideIcon = ({ className = "h-6 w-6" }: { className?: string }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    aria-hidden="true"
-    className={className}
-  >
+const SprayPesticideIcon = ({
+  className = "h-6 w-6",
+}: {
+  className?: string;
+}) => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
     <path
       d="M10 4h4m-2 0v3m0 0-2.5 2.5M12 7h5l2 2-3 3v5a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-5l3-3"
       stroke="currentColor"
@@ -38,13 +31,12 @@ const SprayPesticideIcon = ({ className = "h-6 w-6" }: { className?: string }) =
   </svg>
 );
 
-const SprayInsecticideIcon = ({ className = "h-6 w-6" }: { className?: string }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    aria-hidden="true"
-    className={className}
-  >
+const SprayInsecticideIcon = ({
+  className = "h-6 w-6",
+}: {
+  className?: string;
+}) => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
     <path
       d="M9 4h6m-3 0v3m0 0-2.5 2.5M12 7h4.5l1.5 1.5-2.8 2.8V16a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-4.7L9.8 8.2"
       stroke="currentColor"
@@ -61,13 +53,12 @@ const SprayInsecticideIcon = ({ className = "h-6 w-6" }: { className?: string })
   </svg>
 );
 
-const ChevronRightIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    aria-hidden="true"
-    className={className}
-  >
+const ChevronRightIcon = ({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
     <path
       d="M9 6l6 6-6 6"
       stroke="currentColor"
@@ -78,206 +69,169 @@ const ChevronRightIcon = ({ className = "h-5 w-5" }: { className?: string }) => 
   </svg>
 );
 
-// Color definitions for different spraying states
-const SPRAY_COLORS = {
-  healthy: {
-    bg: "#2f7f3a",
-    text: "#ffffff",
-    hover: "#3f9a4e",
-  },
-  pest: {
-    bg: "#f59e0b",
-    text: "#1f1f1f",
-    hover: "#ea580c",
-  },
-  disease: {
-    bg: "#4f98ff",
-    text: "#ffffff",
-    hover: "#2f5fb5",
-  },
-};
-
 export const SprayControls = ({
   machineLocation,
-  palette,
   orientation = "row",
 }: SprayControlsProps) => {
   const [sprayingPesticide, setSprayingPesticide] = useState(false);
   const [sprayingInsecticide, setSprayingInsecticide] = useState(false);
 
-  //if the farmer clicck spray pesticide, if the action is true spray and if the action is false stop the spraying
   const handleSprayPesticide = async () => {
-    const nextSprayingPesticide = !sprayingPesticide;
-    setSprayingPesticide(nextSprayingPesticide);
+    const nextState = !sprayingPesticide;
+    setSprayingPesticide(nextState);
     try {
-      console.log("Spraying pesticide on:", machineLocation);
-      await BACKENDAPI.post("/spraying/action", { 
+      await BACKENDAPI.post("/spraying/action", {
         machine_location: machineLocation,
-        status:"pest",
-        action: nextSprayingPesticide
-       });
+        status: "pest",
+        action: nextState,
+      });
     } catch (error) {
-      console.error("Failed to spray pesticide:", error);
-      setSprayingPesticide(sprayingPesticide);
-    } 
+      setSprayingPesticide(!nextState); // Revert on failure
+    }
   };
 
-  
   const handleSprayInsecticide = async () => {
-    const nextSprayingInsecticide = !sprayingInsecticide;
-    setSprayingInsecticide(nextSprayingInsecticide);
+    const nextState = !sprayingInsecticide;
+    setSprayingInsecticide(nextState);
     try {
-      // Send spray insecticide command to backend
-      console.log("Spraying insecticide on:", machineLocation);
-       await BACKENDAPI.post("/spraying/action", {
-         machine_location: machineLocation,
-         status:"disease",
-         action: nextSprayingInsecticide
-        });
+      await BACKENDAPI.post("/spraying/action", {
+        machine_location: machineLocation,
+        status: "disease",
+        action: nextState,
+      });
     } catch (error) {
-      console.error("Failed to spray insecticide:", error);
-      setSprayingInsecticide(sprayingInsecticide);
-    } 
+      setSprayingInsecticide(!nextState); // Revert on failure
+    }
   };
 
-  // Get colors based on spraying state
-  const pesticideColors = sprayingPesticide ? SPRAY_COLORS.pest : SPRAY_COLORS.healthy;
-  const insecticideColors = sprayingInsecticide ? SPRAY_COLORS.disease : SPRAY_COLORS.healthy;
+  // GLASSMORPHIC STYLING LOGIC
+  // When active (spraying) = Green theme. When inactive = amber/blue theme.
+  const pesticideCard = sprayingPesticide
+    ? "bg-[#2f7f3a]/15 border-[#2f7f3a]/40 shadow-[0_0_15px_rgba(47,127,58,0.2)] text-[#0f4a27]"
+    : "bg-[#f59e0b]/10 border-[#f59e0b]/30 hover:bg-[#f59e0b]/20 text-[#5b3111] shadow-sm";
+
+  const pesticideIcon = sprayingPesticide
+    ? "bg-[#2f7f3a]/20 text-[#1f6a32]"
+    : "bg-[#f59e0b]/20 text-[#a15c00]";
+
+  const insecticideCard = sprayingInsecticide
+    ? "bg-[#2f7f3a]/15 border-[#2f7f3a]/40 shadow-[0_0_15px_rgba(47,127,58,0.2)] text-[#0f4a27]"
+    : "bg-[#4f98ff]/10 border-[#4f98ff]/30 hover:bg-[#4f98ff]/20 text-[#173768] shadow-sm";
+
+  const insecticideIcon = sprayingInsecticide
+    ? "bg-[#2f7f3a]/20 text-[#1f6a32]"
+    : "bg-[#4f98ff]/20 text-[#245ea8]";
 
   const buttonBaseClass =
     orientation === "stacked"
-      ? "flex min-h-24 w-full items-center justify-between gap-4 rounded-[18px] px-4 py-4 text-left font-bold tracking-[0.06em] shadow-[0_8px_18px_rgba(0,0,0,0.08)] transition-transform transition-shadow duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(0,0,0,0.1)] disabled:cursor-not-allowed disabled:opacity-70"
-      : "flex-1 rounded-xl px-3 py-1.5 text-[12px] font-bold tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-70";
+      ? "flex w-full items-center justify-between gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-300 disabled:opacity-50"
+      : "flex-1 rounded-xl px-3 py-1.5 text-[12px] font-bold tracking-[0.08em] transition-all disabled:opacity-50 border";
 
-  const renderButtonContent = (
+  const renderContent = (
     title: string,
     subtitle: string,
-    textColor: string,
+    iconBgClass: string,
     icon: ReactNode,
+    isActive: boolean,
   ) => (
-    <div className="flex min-w-0 items-center gap-3">
+    <div className="flex min-w-0 items-center gap-4">
       <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/45"
-        style={{ color: textColor }}
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${iconBgClass}`}
       >
         {icon}
       </div>
       <div className="min-w-0">
-        <span className="block truncate text-sm leading-tight">{title}</span>
-        <span className="mt-0.5 block text-[10px] font-medium normal-case tracking-normal opacity-80">
-          {subtitle}
+        <span className="block truncate text-[15px] font-bold leading-tight">
+          {title}
         </span>
+        <motion.span
+          animate={isActive ? { opacity: [1, 0.5, 1] } : {}}
+          transition={isActive ? { duration: 1.5, repeat: Infinity } : {}}
+          className={`mt-0.5 block text-[11px] font-medium tracking-wide ${isActive ? "text-[#1f6a32]" : "opacity-60"}`}
+        >
+          {subtitle}
+        </motion.span>
       </div>
     </div>
   );
 
-  const pesticideCard = sprayingPesticide
-    ? { bg: "#dff2e1", fg: "#1f6a32", hover: "#d4ecd6", icon: "#1f6a32", border: "rgba(47,127,58,0.18)" }
-    : { bg: "#fff1dc", fg: "#a15c00", hover: "#ffe7c5", icon: "#a15c00", border: "rgba(245,158,11,0.16)" };
-
-  const insecticideCard = sprayingInsecticide
-    ? { bg: "#dff2e1", fg: "#1f6a32", hover: "#d4ecd6", icon: "#1f6a32", border: "rgba(47,127,58,0.18)" }
-    : { bg: "#e7f1ff", fg: "#245ea8", hover: "#dbeaff", icon: "#245ea8", border: "rgba(79,152,255,0.16)" };
-
   if (orientation === "stacked") {
     return (
-      <div className="grid gap-3">
-        <button
+      <div className="grid gap-4">
+        {/* PESTICIDE BUTTON */}
+        <motion.button
+          whileTap={{ scale: 0.98 }}
           type="button"
           onClick={handleSprayPesticide}
-          className={buttonBaseClass}
-          style={{
-            backgroundColor: pesticideCard.bg,
-            color: pesticideCard.fg,
-            border: `1px solid ${pesticideCard.border}`,
-          }}
-          onMouseEnter={(event) => {
-            event.currentTarget.style.backgroundColor = pesticideCard.hover;
-          }}
-          onMouseLeave={(event) => {
-            event.currentTarget.style.backgroundColor = pesticideCard.bg;
-          }}
+          className={`${buttonBaseClass} ${pesticideCard}`}
         >
-          {renderButtonContent(
-            sprayingPesticide ? "Spraying...." : "Spray Pesticide",
-            sprayingPesticide ? "Action in progress" : "Remote spraying control",
-            pesticideCard.icon,
-            <SprayPesticideIcon className="h-5 w-5" />,
+          {renderContent(
+            sprayingPesticide ? "Spraying Pesticide..." : "Spray Pesticide",
+            sprayingPesticide
+              ? "System active • Outputting"
+              : "Target: Pests & Insects",
+            pesticideIcon,
+            <SprayPesticideIcon className="h-6 w-6" />,
+            sprayingPesticide,
           )}
-          <span style={{ color: pesticideCard.fg }}>
-            <ChevronRightIcon className="h-6 w-6" />
+          <span className="opacity-60">
+            {sprayingPesticide ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#1f6a32] border-t-transparent" />
+            ) : (
+              <ChevronRightIcon className="h-6 w-6" />
+            )}
           </span>
-        </button>
+        </motion.button>
 
-        <button
+        {/* INSECTICIDE BUTTON */}
+        <motion.button
+          whileTap={{ scale: 0.98 }}
           type="button"
           onClick={handleSprayInsecticide}
-          className={buttonBaseClass}
-          style={{
-            backgroundColor: insecticideCard.bg,
-            color: insecticideCard.fg,
-            border: `1px solid ${insecticideCard.border}`,
-          }}
-          onMouseEnter={(event) => {
-            event.currentTarget.style.backgroundColor = insecticideCard.hover;
-          }}
-          onMouseLeave={(event) => {
-            event.currentTarget.style.backgroundColor = insecticideCard.bg;
-          }}
+          className={`${buttonBaseClass} ${insecticideCard}`}
         >
-          {renderButtonContent(
-            sprayingInsecticide ? "Spraying...." : "Spray Insecticide",
-            sprayingInsecticide ? "Action in progress" : "Remote spraying control",
-            insecticideCard.icon,
-            <SprayInsecticideIcon className="h-5 w-5" />,
+          {renderContent(
+            sprayingInsecticide
+              ? "Spraying Insecticide..."
+              : "Spray Insecticide",
+            sprayingInsecticide
+              ? "System active • Outputting"
+              : "Target: Fungal & Disease",
+            insecticideIcon,
+            <SprayInsecticideIcon className="h-6 w-6" />,
+            sprayingInsecticide,
           )}
-          <span style={{ color: insecticideCard.fg }}>
-            <ChevronRightIcon className="h-6 w-6" />
+          <span className="opacity-60">
+            {sprayingInsecticide ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#1f6a32] border-t-transparent" />
+            ) : (
+              <ChevronRightIcon className="h-6 w-6" />
+            )}
           </span>
-        </button>
+        </motion.button>
       </div>
     );
   }
 
   return (
     <div className="flex gap-2">
-      <button
+      <motion.button
+        whileTap={{ scale: 0.95 }}
         type="button"
         onClick={handleSprayPesticide}
-        // disabled={sprayingPesticide}
-        className="flex-1 rounded-xl px-3 py-1.5 text-[12px] font-bold tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-70"
-        style={{
-          backgroundColor: pesticideColors.bg,
-          color: pesticideColors.text,
-        }}
-        onMouseEnter={(event) => {
-          event.currentTarget.style.backgroundColor = pesticideColors.hover;
-        }}
-        onMouseLeave={(event) => {
-          event.currentTarget.style.backgroundColor = pesticideColors.bg;
-        }}
+        className={`${buttonBaseClass} ${pesticideCard}`}
       >
-        {sprayingPesticide ? "STOP SPRAYING..." : "SPRAY PESTICIDE"}
-      </button>
+        {sprayingPesticide ? "STOPPING..." : "SPRAY PESTICIDE"}
+      </motion.button>
 
-      <button
+      <motion.button
+        whileTap={{ scale: 0.95 }}
         type="button"
         onClick={handleSprayInsecticide}
-        // disabled={sprayingInsecticide}
-        className="flex-1 rounded-xl px-3 py-1.5 text-[12px] font-bold tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-70"
-        style={{
-          backgroundColor: insecticideColors.bg,
-          color: insecticideColors.text,
-        }}
-        onMouseEnter={(event) => {
-          event.currentTarget.style.backgroundColor = insecticideColors.hover;
-        }}
-        onMouseLeave={(event) => {
-          event.currentTarget.style.backgroundColor = insecticideColors.bg;
-        }}
+        className={`${buttonBaseClass} ${insecticideCard}`}
       >
-        {sprayingInsecticide ? "STOP SPRAYING..." : "SPRAY INSECTICIDE"}
-      </button>
+        {sprayingInsecticide ? "STOPPING..." : "SPRAY INSECTICIDE"}
+      </motion.button>
     </div>
   );
 };

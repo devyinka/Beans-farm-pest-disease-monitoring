@@ -1,92 +1,52 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   RemoteConfigurationProps,
   UIStatus,
-  RemoteConfigPayload,
   ESP32ANDAIconfiguration,
 } from "@/types/type";
-import { useUserLoginContext } from "@/context/userLogincontex";
 
 const getRemoteConfigPalette = (status: UIStatus) => {
-  const palettes: Record<
-    UIStatus,
-    {
-      outerBg: string;
-      cardBg: string;
-      borderColor: string;
-      headerBg: string;
-      headerTitle: string;
-      labelText: string;
-      subText: string;
-      sliderAccent: string;
-      buttonBg: string;
-      buttonText: string;
-      buttonHover: string;
-      selectBorder: string;
-      selectText: string;
-      inputTrack: string;
-      badgeBg: string;
-      badgeText: string;
-    }
-  > = {
+  const palettes: Record<UIStatus, any> = {
     healthy: {
-      outerBg: "bg-[#edf1e8]",
-      cardBg: "bg-[#f7faf4]",
       borderColor: "border-[#2f7f3a]",
-      headerBg: "bg-[#0f4a27]",
-      headerTitle: "text-[#dbffe8]",
+      headerTitle: "text-[#0f4a27]",
       labelText: "text-[#1c4a2b]",
       subText: "text-[#4f7059]",
       sliderAccent: "#2f7f3a",
       buttonBg: "#2f7f3a",
       buttonText: "#f4fff7",
-      buttonHover: "#3f9a4e",
       selectBorder: "border-[#d4dfcd]",
-      selectText: "text-[#234930]",
       inputTrack: "#d3dfcc",
-      badgeBg: "#2d5f35",
-      badgeText: "#a6f6bb",
+      divider: "border-black/5",
     },
     disease: {
-      outerBg: "bg-[#e9edf6]",
-      cardBg: "bg-[#f5f8ff]",
       borderColor: "border-[#4f98ff]",
-      headerBg: "bg-[#0f244a]",
-      headerTitle: "text-[#e4efff]",
+      headerTitle: "text-[#0f244a]",
       labelText: "text-[#173768]",
       subText: "text-[#5c7398]",
       sliderAccent: "#4f98ff",
       buttonBg: "#4f98ff",
       buttonText: "#f5f9ff",
-      buttonHover: "#3f86e8",
       selectBorder: "border-[#ccd8ef]",
-      selectText: "text-[#173768]",
       inputTrack: "#d4dff1",
-      badgeBg: "#2d4a8a",
-      badgeText: "#cbe0ff",
+      divider: "border-black/5",
     },
     pest: {
-      outerBg: "bg-[#f3ece3]",
-      cardBg: "bg-[#fbf4ea]",
       borderColor: "border-[#f59e0b]",
-      headerBg: "bg-[#2a1204]",
-      headerTitle: "text-[#ffd9b0]",
+      headerTitle: "text-[#2a1204]",
       labelText: "text-[#5b3111]",
       subText: "text-[#9a7656]",
       sliderAccent: "#f59e0b",
       buttonBg: "#e19b42",
       buttonText: "#fff8ef",
-      buttonHover: "#cc8a38",
       selectBorder: "border-[#ead8bf]",
-      selectText: "text-[#5b3111]",
       inputTrack: "#eadcc8",
-      badgeBg: "#5a3818",
-      badgeText: "#ffd7a6",
+      divider: "border-black/5",
     },
   };
-
   return palettes[status];
 };
 
@@ -96,6 +56,7 @@ const QUICK_REMOTE_PROFILES = [
   { label: "Conservative", confidence: 90, interval: 45 },
   { label: "Balanced", confidence: 80, interval: 30 },
   { label: "Rapid Detect", confidence: 70, interval: 10 },
+  { label: "Custom", confidence: 0, interval: 0 },
 ];
 
 export const RemoteConfiguration = ({
@@ -104,7 +65,12 @@ export const RemoteConfiguration = ({
   defaultConfidence = 75,
   defaultIntervalMinutes = 30,
   onSave,
-}: RemoteConfigurationProps) => {
+  isExpanded,
+  onToggle,
+}: RemoteConfigurationProps & {
+  isExpanded?: boolean;
+  onToggle?: () => void;
+}) => {
   const palette = getRemoteConfigPalette(status);
 
   const [aiConfidence, setAiConfidence] = useState<number>(
@@ -113,276 +79,228 @@ export const RemoteConfiguration = ({
   const [intervalMinutes, setIntervalMinutes] = useState<number>(
     defaultIntervalMinutes,
   );
+  const [activeProfile, setActiveProfile] = useState<string>("Custom");
   const [isSaving, setIsSaving] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(true);
-  // Whenever the backend updates the default values (e.g. from a database or after applying settings), this effect ensures the sliders reflect those changes immediately.
+
   useEffect(() => {
     setIntervalMinutes(defaultIntervalMinutes);
   }, [defaultIntervalMinutes]);
 
-  const pollLabel = useMemo(() => {
-    if (intervalMinutes >= 60) {
-      const hours = intervalMinutes / 60;
-      return `${hours} ${hours > 1 ? "Hours" : "Hour"}`;
+  const handleProfileSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const profileLabel = e.target.value;
+    setActiveProfile(profileLabel);
+
+    if (profileLabel !== "Custom") {
+      const profile = QUICK_REMOTE_PROFILES.find(
+        (p) => p.label === profileLabel,
+      );
+      if (profile) {
+        setAiConfidence(profile.confidence);
+        setIntervalMinutes(profile.interval);
+      }
     }
-    return `${intervalMinutes} Minutes`;
-  }, [intervalMinutes]);
-
-  const confidenceProfile = useMemo(() => {
-    if (aiConfidence >= 90) return "Very Strict";
-    if (aiConfidence >= 80) return "Balanced";
-    return "Permissive";
-  }, [aiConfidence]);
-
-  const wakeProfile = useMemo(() => {
-    if (intervalMinutes === 1) return "Demo";
-    if (intervalMinutes <= 10) return "High Frequency";
-    if (intervalMinutes <= 30) return "Recommended";
-    return "Power Saver";
-  }, [intervalMinutes]);
+  };
 
   const handleSave = async () => {
     const payload: ESP32ANDAIconfiguration = {
       machine_location: machineLocation,
       aiConfidence,
       sensorPollingRateMinutes: intervalMinutes,
-      // updatedAt: new Date().toISOString(),
     };
-
     setIsSaving(true);
     try {
-      if (onSave) {
-        await onSave(payload);
-      }
+      if (onSave) await onSave(payload);
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <section
-      className={`${palette.outerBg} h-full w-full px-4 pb-0.5 pt-0.5`}
+    <div
+      className={`w-full transition-all duration-500 ease-out ${
+        isExpanded
+          ? `bg-white/70 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.04)] border-l-4 ${palette.borderColor} my-2 rounded-xl`
+          : "bg-transparent border-l-4 border-transparent hover:bg-white/30 rounded-xl"
+      }`}
     >
-      <div
-        className={`relative flex h-full min-h-36 flex-col overflow-hidden rounded-2xl border-2 ${palette.borderColor} ${palette.cardBg}`}
+      {/* Accordion Toggle Header */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors ${
+          isExpanded ? "bg-transparent" : "bg-transparent rounded-xl"
+        }`}
+        aria-expanded={isExpanded}
       >
-        <div
-          className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl"
-          style={{ backgroundColor: palette.sliderAccent, opacity: 0.18 }}
-        />
-        <div
-          className="pointer-events-none absolute -left-10 bottom-0 h-24 w-24 rounded-full blur-2xl"
-          style={{ backgroundColor: palette.badgeBg, opacity: 0.14 }}
-        />
-
-        <button
-          type="button"
-          onClick={() => setIsExpanded((previous) => !previous)}
-          className={`${palette.headerBg} flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-opacity hover:opacity-95 sm:px-5`}
-          aria-expanded={isExpanded}
-          aria-controls="remote-configuration-panel"
+        <div className="flex items-center gap-3">
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${palette.selectBorder} bg-white shadow-sm`}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={palette.sliderAccent}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+          <div>
+            <h2 className={`text-[15px] font-bold ${palette.headerTitle}`}>
+              Farm Control
+            </h2>
+            <p className={`text-[11px] font-medium ${palette.subText}`}>
+              Polling & AI-prediction settings
+            </p>
+          </div>
+        </div>
+        <motion.div
+          animate={{ rotate: isExpanded ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
         >
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-10 w-10 flex-col items-center justify-center gap-1 rounded-full border border-white/20 bg-white/10">
-              <span className="h-0.5 w-4 rounded-full bg-white/85" />
-              <span className="h-0.5 w-4 rounded-full bg-white/85" />
-              <span className="h-0.5 w-4 rounded-full bg-white/85" />
-            </span>
-            <div className="min-w-0">
-              <h2 className={`text-base font-bold ${palette.headerTitle}`}>
-                Farm Control
-              </h2>
-              <p className="mt-0.5 truncate text-[10px] text-[rgba(255,255,255,0.72)]">
-                polling, AI-prediction and spraying control control
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span
-              className="rounded-full px-3 py-1 text-[10px] font-semibold tracking-[0.08em]"
-              style={{
-                backgroundColor: palette.badgeBg,
-                color: palette.badgeText,
-              }}
-            >
-              SETUP MODE
-            </span>
-            <span
-              className="text-lg font-bold text-white transition-transform duration-200"
-              style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}
-            >
-              ▾
-            </span>
-          </div>
-        </button>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-black/40"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </motion.div>
+      </button>
 
+      {/* Accordion Body */}
+      <AnimatePresence initial={false}>
         {isExpanded && (
-          <div id="remote-configuration-panel">
-            <div className="grid grid-cols-2 gap-2 px-4 pt-1.5 sm:px-5">
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 flex flex-col">
+              {/* Row 1: Quick Preset Dropdown */}
               <div
-                className="rounded-xl border px-2.5 py-1.5"
-                style={{ borderColor: palette.selectBorder }}
-              >
-                <p
-                  className={`text-[9px] font-semibold tracking-[0.06em] ${palette.subText}`}
-                >
-                  ALERT PROFILE
-                </p>
-                <p className={`mt-0.5 text-[13px] font-bold ${palette.labelText}`}>
-                  {confidenceProfile}
-                </p>
-              </div>
-              <div
-                className="rounded-xl border px-2.5 py-1.5"
-                style={{ borderColor: palette.selectBorder }}
-              >
-                <p
-                  className={`text-[9px] font-semibold tracking-[0.06em] ${palette.subText}`}
-                >
-                  WAKE MODE
-                </p>
-                <p className={`mt-0.5 text-[13px] font-bold ${palette.labelText}`}>
-                  {wakeProfile}
-                </p>
-              </div>
-            </div>
-
-            <div className="px-4 pt-1 sm:px-5">
-              <p
-                className={`text-[9px] font-semibold tracking-[0.06em] ${palette.subText}`}
-              >
-                QUICK PROFILES
-              </p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {QUICK_REMOTE_PROFILES.map((profile) => {
-                  const isActive =
-                    aiConfidence === profile.confidence &&
-                    intervalMinutes === profile.interval;
-
-                  return (
-                    <button
-                      key={profile.label}
-                      type="button"
-                      onClick={() => {
-                        setAiConfidence(profile.confidence);
-                        setIntervalMinutes(profile.interval);
-                      }}
-                      className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold transition-all"
-                      style={{
-                        backgroundColor: isActive ? palette.badgeBg : "transparent",
-                        color: isActive ? palette.badgeText : undefined,
-                        border: `1px solid ${isActive ? palette.badgeBg : palette.selectBorder}`,
-                      }}
-                    >
-                      {profile.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col gap-1.5 p-2 sm:p-2.5">
-              <div
-                className="rounded-xl border p-1.5"
-                style={{ borderColor: palette.selectBorder }}
+                className={`flex flex-wrap items-center justify-between gap-3 py-3 border-b ${palette.divider}`}
               >
                 <label
-                  className={`text-[10px] font-semibold tracking-[0.06em] ${palette.labelText}`}
+                  className={`shrink-0 text-xs font-bold tracking-wider ${palette.labelText}`}
                 >
-                  AI WARNING SENSITIVITY
+                  PRESET MODE
                 </label>
-                <div className="mt-2 flex items-center gap-2.5">
-                  <input
-                    type="range"
-                    min={50}
-                    max={100}
-                    step={1}
-                    value={aiConfidence}
-                    onChange={(event) =>
-                      setAiConfidence(Number(event.target.value))
-                    }
-                    className="h-2 w-full cursor-pointer rounded-lg"
-                    style={{
-                      accentColor: palette.sliderAccent,
-                      backgroundColor: palette.inputTrack,
-                    }}
-                  />
-                  <span
-                    className={`w-12 text-right text-[13px] font-bold ${palette.labelText}`}
-                  >
-                    {aiConfidence}%
-                  </span>
-                </div>
-                <p className={`mt-1.5 text-[10px] ${palette.subText}`}>
-                  Controls how strict AI must be before triggering warning
-                  workflows.
-                </p>
+                <select
+                  value={activeProfile}
+                  onChange={handleProfileSelect}
+                  className={`w-[140px] sm:w-[180px] cursor-pointer rounded-lg border bg-white/60 px-3 py-2 text-sm font-black shadow-sm outline-none backdrop-blur-sm transition-all hover:bg-white/80 focus:ring-2 focus:ring-offset-1 ${palette.selectBorder} ${palette.labelText}`}
+                  style={
+                    {
+                      "--tw-ring-color": palette.sliderAccent,
+                    } as React.CSSProperties
+                  }
+                >
+                  {QUICK_REMOTE_PROFILES.map((p) => (
+                    <option key={p.label} value={p.label}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
+              {/* Row 2: Polling Rate Dropdown */}
               <div
-                className="rounded-xl border p-1.5"
-                style={{ borderColor: palette.selectBorder }}
+                className={`flex flex-wrap items-center justify-between gap-3 py-3 border-b ${palette.divider}`}
               >
                 <label
-                  className={`text-[10px] font-semibold tracking-[0.06em] ${palette.labelText}`}
+                  className={`shrink-0 text-xs font-bold tracking-wider ${palette.labelText}`}
                 >
-                  SENSOR POLLING RATE
+                  POLLING RATE
                 </label>
                 <select
                   value={intervalMinutes}
-                  onChange={(event) =>
-                    setIntervalMinutes(Number(event.target.value))
+                  onChange={(e) => {
+                    setIntervalMinutes(Number(e.target.value));
+                    setActiveProfile("Custom");
+                  }}
+                  className={`w-[140px] sm:w-[180px] cursor-pointer rounded-lg border bg-white/60 px-3 py-2 text-sm font-black shadow-sm outline-none backdrop-blur-sm transition-all hover:bg-white/80 focus:ring-2 focus:ring-offset-1 ${palette.selectBorder} ${palette.labelText}`}
+                  style={
+                    {
+                      "--tw-ring-color": palette.sliderAccent,
+                    } as React.CSSProperties
                   }
-                  className={`mt-1.5 w-full rounded-md border px-2.5 py-1.5 text-[13px] font-medium outline-none ${palette.selectBorder} ${palette.selectText}`}
                 >
                   {POLLING_INTERVAL_OPTIONS.map((minutes) => (
                     <option key={minutes} value={minutes}>
                       Every{" "}
                       {minutes < 60
-                        ? `${minutes} Minutes`
-                        : `${minutes / 60} Hour${minutes > 60 ? "s" : ""}`}
-                      {minutes === 30 ? " (Recommended)" : ""}
+                        ? `${minutes} Mins`
+                        : `${minutes / 60} Hr${minutes > 60 ? "s" : ""}`}
                     </option>
                   ))}
                 </select>
-                <div className="mt-1.5 flex items-center justify-between">
-                  <p className={`text-[10px] ${palette.subText}`}>
-                    ESP32 wakes every {pollLabel}.
-                  </p>
-                  <span
-                    className="rounded-full px-2 py-0.5 text-[9px] font-semibold"
-                    style={{
-                      backgroundColor: palette.badgeBg,
-                      color: palette.badgeText,
-                    }}
+              </div>
+
+              {/* Row 3: AI Sensitivity Slider */}
+              <div
+                className={`flex flex-col justify-center py-4 border-b ${palette.divider}`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <label
+                    className={`shrink-0 text-xs font-bold tracking-wider ${palette.labelText}`}
                   >
-                    {wakeProfile}
+                    AI SENSITIVITY
+                  </label>
+                  <span
+                    className={`w-[140px] sm:w-[180px] text-right text-sm font-black pr-1 ${palette.labelText}`}
+                  >
+                    {aiConfidence}%
                   </span>
                 </div>
+                <input
+                  type="range"
+                  min={50}
+                  max={100}
+                  step={1}
+                  value={aiConfidence}
+                  onChange={(e) => {
+                    setAiConfidence(Number(e.target.value));
+                    setActiveProfile("Custom");
+                  }}
+                  className="h-2 w-full cursor-pointer rounded-lg appearance-none shadow-inner"
+                  style={{
+                    accentColor: palette.sliderAccent,
+                    backgroundColor: palette.inputTrack,
+                  }}
+                />
               </div>
+
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={isSaving}
-                className="mt-auto w-full rounded-xl px-4 py-1.5 text-[13px] font-bold tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-70"
+                className="mt-5 w-full rounded-lg px-4 py-3 text-xs font-black tracking-widest transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 shadow-sm"
                 style={{
                   backgroundColor: palette.buttonBg,
                   color: palette.buttonText,
-                }}
-                onMouseEnter={(event) => {
-                  event.currentTarget.style.backgroundColor = palette.buttonHover;
-                }}
-                onMouseLeave={(event) => {
-                  event.currentTarget.style.backgroundColor = palette.buttonBg;
                 }}
               >
                 {isSaving ? "SAVING..." : "APPLY ESP32 SETTINGS"}
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
-    </section>
+      </AnimatePresence>
+    </div>
   );
 };
 

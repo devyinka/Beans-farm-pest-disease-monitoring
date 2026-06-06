@@ -14,7 +14,7 @@ export default function SmartAgriInteractiveGrid() {
       title: "5 Live Sensors",
       subtitle: "TELEMETRY MATRIX",
       meta: "STREAMS ACTIVE",
-      desc: "Real-time edge streams capturing variations in ambient temperature, atmospheric humidity, deep soil moisture index, LDR light levels, and instantaneous rain volume precipitation profiles.",
+      desc: "Continuously monitors temperature, humidity, soil moisture, rainfall, and light intensity from the bean farm environment and sends the readings to the backend server in real time.",
       color: "from-[#b893ff] to-[#8040ff]",
       accent: "#b893ff",
       shadow: "rgba(184, 147, 255, 0.15)",
@@ -24,7 +24,7 @@ export default function SmartAgriInteractiveGrid() {
       title: "ML Prediction Engine",
       subtitle: "CLASSIFIER NODE",
       meta: "ACCURACY: 94.8%",
-      desc: "Localized micro-climate datasets route instantly into a Random Forest ensemble pipeline to map pathogen thresholds, projecting vector outbreak risks before physical bean damage manifests.",
+      desc: "Analyses aggregated sensor data twice daily using a trained Random Forest model to detect early signs of Anthracnose, Bean Aphids, or Bean Pod Borer before visible damage occurs on the crop.",
       color: "from-[#4deeea] to-[#0070f3]",
       accent: "#4deeea",
       shadow: "rgba(77, 238, 234, 0.15)",
@@ -34,7 +34,7 @@ export default function SmartAgriInteractiveGrid() {
       title: "Advanced Analytics",
       subtitle: "GRAPH DATACORE",
       meta: "OPTIMIZED",
-      desc: "Parsing raw structural payloads into instant comparative historical yield matrices, multi-variant regression logs, and clear operational data clusters for field operators.",
+      desc: "Displays historical and real-time sensor readings on the dashboard using charts and graphs, helping the farmer understand farm conditions and track changes over time.",
       color: "from-[#ff007a] to-[#7928ca]",
       accent: "#ff007a",
       shadow: "rgba(255, 0, 122, 0.15)",
@@ -44,7 +44,7 @@ export default function SmartAgriInteractiveGrid() {
       title: "Automated Alerts",
       subtitle: "TELECOM REPEATER",
       meta: "LATENCY: 42ms",
-      desc: "Zero-latency exception logs and telemetry violation thresholds pushed directly to designated remote network pipelines using low-overhead push structures.",
+      desc: "Sends an SMS directly to the farmer's phone via Africastalking whenever the system detects a disease or pest threat, so the farmer is notified even without opening the dashboard.",
       color: "from-[#ff9900] to-[#ff5500]",
       accent: "#ff9900",
       shadow: "rgba(255, 153, 0, 0.15)",
@@ -54,7 +54,7 @@ export default function SmartAgriInteractiveGrid() {
       title: "Remote Spraying",
       subtitle: "ACTUATOR SYSTEM",
       meta: "VALVES IDLE",
-      desc: "Deploy localized counter-measure actuators or configure automated, rule-based misting protocols mapped seamlessly against ongoing machine learning disease classification variables.",
+      desc: "Allows the farmer to activate the fungicide or insecticide pump remotely from the web dashboard to the farm through MQTT and the correct pump is triggered automatically.",
       color: "from-[#00df00] to-[#007000]",
       accent: "#00df00",
       shadow: "rgba(0, 223, 0, 0.15)",
@@ -80,7 +80,7 @@ export default function SmartAgriInteractiveGrid() {
         transition={{ type: "spring", stiffness: 140, damping: 22 }}
       >
         <Card
-          className="relative overflow-hidden border border-[rgba(255,255,255,0.05)] bg-[rgba(10,8,14,0.75)] backdrop-blur-3xl rounded-2xl p-1 transition-all duration-1000 group"
+          className="relative overflow-hidden border border-white/5 bg-[rgba(10,8,14,0.75)] backdrop-blur-3xl rounded-2xl p-1 transition-all duration-1000 group"
           style={{
             boxShadow: `0 30px 60px -20px ${active.shadow}, inset 0 0 0 1px rgba(255,255,255,0.02)`,
           }}
@@ -95,9 +95,9 @@ export default function SmartAgriInteractiveGrid() {
             style={{ backgroundColor: active.accent }}
           />
 
-          <CardContent className="p-4 md:p-6 flex flex-col md:flex-row items-stretch gap-6 min-h-[220px]">
+          <CardContent className="p-4 md:p-6 flex flex-col md:flex-row items-stretch gap-6 min-h-55">
             {/* LEFT COLUMN: Asymmetrical Split Navigation Sidebar Deck */}
-            <div className="flex flex-row md:flex-col justify-between gap-1.5 md:w-[240px] shrink-0 border-b md:border-b-0 md:border-r border-[rgba(255,255,255,0.06)] pb-4 md:pb-0 md:pr-4">
+            <div className="flex flex-row md:flex-col justify-between gap-1.5 md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-[rgba(255,255,255,0.06)] pb-4 md:pb-0 md:pr-4">
               {features.map((item, i) => {
                 const isSelected = i === index;
                 const TabIcon = item.icon;
@@ -111,7 +111,7 @@ export default function SmartAgriInteractiveGrid() {
                     {isSelected && (
                       <motion.div
                         layoutId="activeTabGlow"
-                        className="absolute inset-0 bg-white/[0.03] border border-white/[0.05] rounded-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
+                        className="absolute inset-0 bg-white/3 border border-white/5 rounded-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
                         transition={{
                           type: "spring",
                           stiffness: 160,
@@ -144,7 +144,7 @@ export default function SmartAgriInteractiveGrid() {
                     </span>
 
                     {/* Compact Mobile Native Icon Display Block */}
-                    <div className="md:hidden flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.02]">
+                    <div className="md:hidden flex h-7 w-7 items-center justify-center rounded-lg bg-white/2">
                       <TabIcon
                         size={14}
                         style={{
@@ -160,7 +160,7 @@ export default function SmartAgriInteractiveGrid() {
             </div>
 
             {/* RIGHT COLUMN: High-Vibrancy System Control Terminal */}
-            <div className="flex-1 flex flex-col justify-between relative min-h-[160px] pt-1 md:pt-0">
+            <div className="flex-1 flex flex-col justify-between relative min-h-40 pt-1 md:pt-0">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={index}
@@ -187,7 +187,7 @@ export default function SmartAgriInteractiveGrid() {
 
                     {/* DEDICATED TOP RIGHT ANGLE SLOT: High-Vibrancy Lucide Mini-Bay Terminal */}
                     <div
-                      className={`flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${active.color} p-[1px] shadow-md hidden md:flex`}
+                      className={`flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br ${active.color} p-px shadow-md hidden md:flex`}
                     >
                       <div className="flex h-full w-full items-center justify-center rounded-[8px] bg-[#0c0a0f]">
                         <ActiveIcon
@@ -216,13 +216,13 @@ export default function SmartAgriInteractiveGrid() {
               {/* Bottom Metrics Bar: Houses Progress indicators and timeline tracking */}
               <div className="mt-6 flex items-center justify-between border-t border-[rgba(255,255,255,0.05)] pt-4 w-full">
                 {/* Simulated Automated Loop Pipeline Line */}
-                <div className="flex-1 max-w-[140px] bg-white/[0.04] h-[2px] rounded-full overflow-hidden relative hidden sm:block">
+                <div className="flex-1 max-w-35 bg-white/4 h-0.5 rounded-full overflow-hidden relative hidden sm:block">
                   <motion.div
                     key={index}
                     initial={{ width: "0%" }}
                     animate={{ width: "100%" }}
                     transition={{ duration: 8, ease: "linear" }}
-                    className="h-full bg-gradient-to-r"
+                    className="h-full bg-linear-to-r"
                     style={{
                       backgroundImage: `linear-gradient(to right, rgba(255,255,255,0.1), ${active.accent})`,
                     }}

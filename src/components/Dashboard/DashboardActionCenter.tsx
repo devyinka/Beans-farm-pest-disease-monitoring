@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { UIStatus } from "@/types/type";
 import SprayControls from "./SprayControls";
 
@@ -9,48 +10,34 @@ type DashboardActionCenterProps = {
 };
 
 const getActionCenterPalette = (status: UIStatus) => {
-  if (status === "disease") {
-    return {
-      sectionBg: "bg-[#e9edf6]",
-      cardBg: "bg-[#f5f8ff]",
-      borderColor: "border-[#4f98ff]",
-      headerBg: "bg-[#0f244a]",
-      headerTitle: "text-[#e4efff]",
-      bodyText: "text-[#173768]",
-      subText: "text-[#5c7398]",
-      buttonBg: "#4f98ff",
-      buttonText: "#f5f9ff",
-      buttonHover: "#3f86e8",
-    };
-  }
-
-  if (status === "pest") {
-    return {
-      sectionBg: "bg-[#f3ece3]",
-      cardBg: "bg-[#fbf4ea]",
-      borderColor: "border-[#f59e0b]",
-      headerBg: "bg-[#2a1204]",
-      headerTitle: "text-[#ffd9b0]",
-      bodyText: "text-[#5b3111]",
-      subText: "text-[#9a7656]",
-      buttonBg: "#e19b42",
-      buttonText: "#fff8ef",
-      buttonHover: "#cc8a38",
-    };
-  }
-
-  return {
-    sectionBg: "bg-[#edf1e8]",
-    cardBg: "bg-[#f7faf4]",
-    borderColor: "border-[#2f7f3a]",
-    headerBg: "bg-[#0f4a27]",
-    headerTitle: "text-[#dbffe8]",
-    bodyText: "text-[#1c4a2b]",
-    subText: "text-[#4f7059]",
-    buttonBg: "#2f7f3a",
-    buttonText: "#f4fff7",
-    buttonHover: "#3f9a4e",
+  const palettes = {
+    healthy: {
+      wrapper: "bg-transparent",
+      card: "bg-white/70 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.04)] border border-white/40 border-l-4 border-l-[#2f7f3a]",
+      headerTitle: "text-[#1c4a2b]",
+      badgeBg: "bg-[#2f7f3a]/15",
+      badgeText: "text-[#0f4a27]",
+      badgePulse: "bg-[#2f7f3a]",
+    },
+    disease: {
+      wrapper: "bg-transparent",
+      card: "bg-white/70 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.04)] border border-white/40 border-l-4 border-l-[#4f98ff]",
+      headerTitle: "text-[#173768]",
+      badgeBg: "bg-[#4f98ff]/15",
+      badgeText: "text-[#0f244a]",
+      badgePulse: "bg-[#4f98ff]",
+    },
+    pest: {
+      wrapper: "bg-transparent",
+      card: "bg-white/70 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.04)] border border-white/40 border-l-4 border-l-[#f59e0b]",
+      headerTitle: "text-[#5b3111]",
+      badgeBg: "bg-[#f59e0b]/15",
+      badgeText: "text-[#2a1204]",
+      badgePulse: "bg-[#f59e0b]",
+    },
   };
+
+  return palettes[status] ?? palettes.healthy;
 };
 
 export const DashboardActionCenter = ({
@@ -60,38 +47,59 @@ export const DashboardActionCenter = ({
   const palette = getActionCenterPalette(status);
 
   return (
-    <section className={`${palette.sectionBg} px-4 pb-4 pt-4 sm:px-6`}>
-      <div
-        className={`flex h-full min-h-72 flex-col overflow-hidden rounded-2xl border-2 ${palette.borderColor} ${palette.cardBg} shadow-[0_2px_8px_rgba(0,0,0,0.08)] sm:min-h-96`}
+    <section className={`${palette.wrapper} px-4 pb-4 pt-4 sm:px-6`}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className={`flex h-full min-h-[18rem] flex-col overflow-hidden rounded-2xl ${palette.card} sm:min-h-[24rem]`}
       >
-        <div className={`${palette.headerBg} px-4 py-3 sm:px-5`}>
+        <div className="border-b border-black/5 px-5 py-4">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className={`text-sm font-bold uppercase tracking-widest ${palette.headerTitle}`}>
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-black/5 bg-white shadow-sm">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={palette.headerTitle}
+                >
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+              </div>
+              <h3 className={`text-[15px] font-bold ${palette.headerTitle}`}>
                 Action Center
               </h3>
-              <p className="mt-1 text-xs text-white/70">
-                Critical spraying controls.
-              </p>
             </div>
-            <span className="rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[10px] font-semibold tracking-[0.08em] text-white/75">
+
+            <div
+              className={`flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-bold tracking-[0.08em] ${palette.badgeBg} ${palette.badgeText}`}
+            >
+              <span className="relative flex h-2 w-2">
+                <span
+                  className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${palette.badgePulse}`}
+                ></span>
+                <span
+                  className={`relative inline-flex h-2 w-2 rounded-full ${palette.badgePulse}`}
+                ></span>
+              </span>
               LIVE OPS
-            </span>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col justify-start gap-4 px-4 py-8 sm:px-5 sm:py-10">
+        <div className="flex flex-1 flex-col justify-start gap-4 p-5 sm:p-6">
           <SprayControls
             machineLocation={machineLocation}
             orientation="stacked"
-            palette={{
-              buttonBg: palette.buttonBg,
-              buttonText: palette.buttonText,
-              buttonHover: palette.buttonHover,
-            }}
           />
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };
