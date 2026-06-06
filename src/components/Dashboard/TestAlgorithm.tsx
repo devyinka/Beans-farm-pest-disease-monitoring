@@ -3,7 +3,7 @@
 import { useState } from "react";
 import BACKENDAPI from "@/API";
 import { AlgorithmTestData } from "@/types/type";
-import { inputField } from "@/types/type";
+import { withAuth } from "../auth/withAuth";
 
 const testPalette = {
   outerBg: "bg-white",
@@ -92,7 +92,11 @@ const SelectField = ({
       className={`w-full px-3 sm:px-4 py-1.5 sm:py-2 bg-white border-2 border-[#d4dfcd] rounded-lg transition-all duration-200 focus:outline-none focus:ring-0 text-xs sm:text-base text-[#1c4a2b] hover:border-[#2f7f3a] focus:border-[#2f7f3a] focus:bg-[#f7faf4] focus:shadow-[0_0_15px_rgba(47,127,58,0.2)] cursor-pointer`}
     >
       {options.map((opt) => (
-        <option key={opt.value} value={opt.value} className="bg-white text-[#1c4a2b]">
+        <option
+          key={opt.value}
+          value={opt.value}
+          className="bg-white text-[#1c4a2b]"
+        >
           {opt.label}
         </option>
       ))}
@@ -124,7 +128,11 @@ export const TestAlgorithm = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [aiResponse, setAiResponse] = useState<{ status: string; threat_name: string; percentage: number } | null>(null);
+  const [aiResponse, setAiResponse] = useState<{
+    status: string;
+    threat_name: string;
+    percentage: number;
+  } | null>(null);
   const [error, setError] = useState("");
 
   const handleInputChange = (
@@ -132,7 +140,7 @@ export const TestAlgorithm = () => {
     value: string | number,
   ) => {
     let finalValue: any = value;
-    
+
     // Only parse as number for numeric fields, keep text fields as strings
     if (field !== "machine_location" && field !== "Growth_Stage") {
       if (typeof value === "string" && value !== "") {
@@ -144,7 +152,7 @@ export const TestAlgorithm = () => {
         }
       }
     }
-    
+
     setFormData((prev) => ({
       ...prev,
       [field]: finalValue,
@@ -165,7 +173,7 @@ export const TestAlgorithm = () => {
       };
 
       const response = await BACKENDAPI.post("/test/AIAlgorithm", payload);
-      
+
       if (response.data?.ai) {
         setAiResponse(response.data.ai);
       }
@@ -181,15 +189,18 @@ export const TestAlgorithm = () => {
   return (
     <div className={`${testPalette.outerBg} min-h-screen`}>
       {/* Header */}
-      <div className={`${testPalette.headerBg} shadow-sm border-b-2 border-[#d4dfcd]`}>
+      <div
+        className={`${testPalette.headerBg} shadow-sm border-b-2 border-[#d4dfcd]`}
+      >
         <div className="px-2 sm:px-4 md:px-6 py-3 sm:py-4">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="animate-pulse">
-              <div className="w-8 sm:w-10 h-8 sm:h-10 bg-[#2f7f3a]/15 rounded-full flex items-center justify-center text-lg sm:text-xl">
-              </div>
+              <div className="w-8 sm:w-10 h-8 sm:h-10 bg-[#2f7f3a]/15 rounded-full flex items-center justify-center text-lg sm:text-xl"></div>
             </div>
             <div>
-              <h1 className={`text-lg sm:text-2xl font-bold ${testPalette.headerTitle}`}>
+              <h1
+                className={`text-lg sm:text-2xl font-bold ${testPalette.headerTitle}`}
+              >
                 Test Unit
               </h1>
               <p className="text-[#4f7059] text-xs sm:text-sm mt-0.5 sm:mt-1">
@@ -208,8 +219,10 @@ export const TestAlgorithm = () => {
             <div
               className={`${testPalette.cardBg} p-3 sm:p-4 rounded-xl border-2 ${testPalette.borderColor} shadow-md hover:shadow-lg transition-all duration-300 lg:col-span-3 hover:border-[#67b978]`}
             >
-              <h3 className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}>
-                 Farm Configuration
+              <h3
+                className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}
+              >
+                Farm Configuration
               </h3>
               <InputField
                 label="Machine Location"
@@ -227,8 +240,10 @@ export const TestAlgorithm = () => {
             <div
               className={`${testPalette.cardBg} p-3 sm:p-4 rounded-xl border-2 ${testPalette.borderColor} shadow-md hover:shadow-lg transition-all duration-300 lg:col-span-3 hover:border-[#67b978]`}
             >
-              <h3 className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}>
-                 Time Configuration
+              <h3
+                className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}
+              >
+                Time Configuration
               </h3>
               <SelectField
                 label="Time of Day"
@@ -249,8 +264,10 @@ export const TestAlgorithm = () => {
             <div
               className={`${testPalette.cardBg} p-3 sm:p-4 rounded-xl border-2 ${testPalette.borderColor} shadow-md hover:shadow-lg transition-all duration-300 lg:col-span-3 hover:border-[#67b978]`}
             >
-              <h3 className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}>
-                 Plant Information
+              <h3
+                className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}
+              >
+                Plant Information
               </h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <InputField
@@ -260,12 +277,12 @@ export const TestAlgorithm = () => {
                   onChange={handleInputChange}
                   step="1"
                 />
-                <InputField 
-                  label="Growth Stage" 
-                  field="Growth_Stage" 
+                <InputField
+                  label="Growth Stage"
+                  field="Growth_Stage"
                   value={formData.Growth_Stage}
                   onChange={handleInputChange}
-                  type="text" 
+                  type="text"
                 />
               </div>
             </div>
@@ -274,8 +291,10 @@ export const TestAlgorithm = () => {
             <div
               className={`${testPalette.cardBg} p-3 sm:p-4 rounded-xl border-2 ${testPalette.borderColor} shadow-md hover:shadow-lg transition-all duration-300 lg:col-span-3 hover:border-[#67b978]`}
             >
-              <h3 className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}>
-                 Climate Data
+              <h3
+                className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}
+              >
+                Climate Data
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                 <InputField
@@ -321,7 +340,9 @@ export const TestAlgorithm = () => {
             <div
               className={`${testPalette.cardBg} p-3 sm:p-4 rounded-xl border-2 ${testPalette.borderColor} shadow-md hover:shadow-lg transition-all duration-300 lg:col-span-3 hover:border-[#67b978]`}
             >
-              <h3 className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}>
+              <h3
+                className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}
+              >
                 Soil Data
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
@@ -350,8 +371,10 @@ export const TestAlgorithm = () => {
             <div
               className={`${testPalette.cardBg} p-3 sm:p-4 rounded-xl border-2 ${testPalette.borderColor} shadow-md hover:shadow-lg transition-all duration-300 lg:col-span-3 hover:border-[#67b978]`}
             >
-              <h3 className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}>
-                 Past 10 Days Indicators
+              <h3
+                className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${testPalette.labelText}`}
+              >
+                Past 10 Days Indicators
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3 lg:gap-4">
                 <InputField
@@ -403,19 +426,33 @@ export const TestAlgorithm = () => {
           <div className="mt-6 sm:mt-8 flex flex-col gap-3 sm:gap-4">
             {aiResponse && (
               <div className="animate-slideIn p-4 sm:p-6 bg-gradient-to-br from-[#2f7f3a]/15 to-[#67b978]/15 border-2 border-[#2f7f3a] rounded-xl">
-                <h3 className="text-base sm:text-lg font-bold text-[#0f4a27] mb-4">AI Prediction Results</h3>
+                <h3 className="text-base sm:text-lg font-bold text-[#0f4a27] mb-4">
+                  AI Prediction Results
+                </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                   <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-[#d4dfcd]">
-                    <p className="text-xs text-[#4f7059] font-semibold uppercase mb-1">Status</p>
-                    <p className="text-lg sm:text-xl font-bold text-[#1c4a2b]">{aiResponse.status}</p>
+                    <p className="text-xs text-[#4f7059] font-semibold uppercase mb-1">
+                      Status
+                    </p>
+                    <p className="text-lg sm:text-xl font-bold text-[#1c4a2b]">
+                      {aiResponse.status}
+                    </p>
                   </div>
                   <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-[#d4dfcd]">
-                    <p className="text-xs text-[#4f7059] font-semibold uppercase mb-1">Threat</p>
-                    <p className="text-lg sm:text-xl font-bold text-[#1c4a2b]">{aiResponse.threat_name || "None"}</p>
+                    <p className="text-xs text-[#4f7059] font-semibold uppercase mb-1">
+                      Threat
+                    </p>
+                    <p className="text-lg sm:text-xl font-bold text-[#1c4a2b]">
+                      {aiResponse.threat_name || "None"}
+                    </p>
                   </div>
                   <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-[#d4dfcd]">
-                    <p className="text-xs text-[#4f7059] font-semibold uppercase mb-1">Confidence</p>
-                    <p className="text-lg sm:text-xl font-bold text-[#2f7f3a]">{aiResponse.percentage.toFixed(1)}%</p>
+                    <p className="text-xs text-[#4f7059] font-semibold uppercase mb-1">
+                      Confidence
+                    </p>
+                    <p className="text-lg sm:text-xl font-bold text-[#2f7f3a]">
+                      {aiResponse.percentage.toFixed(1)}%
+                    </p>
                   </div>
                 </div>
               </div>
@@ -423,7 +460,9 @@ export const TestAlgorithm = () => {
 
             {error && (
               <div className="animate-slideIn p-3 sm:p-4 bg-linear-to-r from-red-200/50 to-orange-200/50 border-l-4 border-red-500 rounded">
-                <p className="text-red-700 font-semibold text-sm sm:text-base">{error}</p>
+                <p className="text-red-700 font-semibold text-sm sm:text-base">
+                  {error}
+                </p>
               </div>
             )}
 
@@ -442,8 +481,9 @@ export const TestAlgorithm = () => {
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">
-
-                  <span className="hidden sm:inline">Test Algorithm Prediction</span>
+                  <span className="hidden sm:inline">
+                    Test Algorithm Prediction
+                  </span>
                   <span className="sm:hidden">Test Algorithm</span>
                 </span>
               )}
@@ -487,4 +527,4 @@ export const TestAlgorithm = () => {
   );
 };
 
-export default TestAlgorithm;
+export default withAuth(TestAlgorithm);

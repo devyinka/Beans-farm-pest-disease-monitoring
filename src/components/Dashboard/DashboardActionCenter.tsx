@@ -92,7 +92,6 @@ export const DashboardActionCenter = ({
             </div>
           </div>
         </div>
-
         <div className="flex flex-1 flex-col justify-start gap-4 p-5 sm:p-6">
           <SprayControls
             machineLocation={machineLocation}

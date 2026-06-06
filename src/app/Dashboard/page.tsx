@@ -6,7 +6,7 @@ import { useSocketStatus } from "@/context/socketContext";
 import { useFarmData } from "@/hook/useFarmData";
 import { useAlertHistory } from "@/hook/useAlertHistory";
 import Link from "next/link";
-
+import { withAuth } from "@/components/auth/withAuth";
 import { remoteConfigDefault } from "@/Mock/RemoteConfig";
 
 import {
@@ -20,10 +20,7 @@ import {
   ESP32ANDAIconfiguration,
 } from "@/types/type";
 import ClimateLineChart from "@/components/Dashboard/ClimateLineChart";
-import {
-  AlertStrip,
-  SensorGrid,
-} from "@/components/Dashboard/topHeader";
+import { AlertStrip, SensorGrid } from "@/components/Dashboard/topHeader";
 import { FarmstatusBox } from "@/components/Dashboard/Farmstatusbox";
 import { STATUS_STYLES } from "@/types/UIStstus";
 import { Solution } from "@/components/Dashboard/Solution";
@@ -131,7 +128,10 @@ const DashboardPage = () => {
 
   if (!farmData) {
     return (
-      <div className="flex h-screen w-full items-center justify-center" suppressHydrationWarning>
+      <div
+        className="flex h-screen w-full items-center justify-center"
+        suppressHydrationWarning
+      >
         <p className="text-gray-500 font-semibold">Loading farm data...</p>
       </div>
     );
@@ -143,7 +143,7 @@ const DashboardPage = () => {
 
   //  Create "safe" versions of the data that provide defaults if any fields are missing. This ensures the UI can render without errors even if some data is not yet available from the backend.
   const safeAIData = {
-    ui_status: dashboardData?.AIData?.ui_status ?? "healthy",// i will update this to demostrate the different states, but for now default to healthy to show the full UI.
+    ui_status: dashboardData?.AIData?.ui_status ?? "healthy", // i will update this to demostrate the different states, but for now default to healthy to show the full UI.
     ui_title: dashboardData?.AIData?.ui_title ?? "Monitoring...",
     confidence: dashboardData?.AIData?.confidence ?? 0,
     description: dashboardData?.AIData?.description ?? "Fetching analysis...",
@@ -239,10 +239,10 @@ const DashboardPage = () => {
       setThresholdConfig(payload);
     }
   };
-const handlesettingopen=()=>{
-  const nextState=!isSettingsOpen;
-  setIsSettingsOpen(nextState);
-}
+  const handlesettingopen = () => {
+    const nextState = !isSettingsOpen;
+    setIsSettingsOpen(nextState);
+  };
   return (
     <div className="bg-[#eef2eb]">
       <TopNav
@@ -314,7 +314,10 @@ const handlesettingopen=()=>{
         </h3>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.05fr_0.95fr_0.9fr] lg:items-stretch">
           <Solution farmData={dashboardData} status={status} />
-          <DashboardActionCenter machineLocation={safeLocationName} status={status} />
+          <DashboardActionCenter
+            machineLocation={safeLocationName}
+            status={status}
+          />
           <Alerthistory
             AlertHistory={alertHistory}
             status={status}
@@ -348,4 +351,4 @@ const handlesettingopen=()=>{
   );
 };
 
-export default DashboardPage;
+export default withAuth(DashboardPage);

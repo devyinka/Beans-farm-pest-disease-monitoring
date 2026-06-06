@@ -89,16 +89,21 @@ const AuthPage = () => {
       });
 
       if (response.status >= 200 && response.status < 300) {
-        const token = response.data?.token ?? response.data?.user?.token;
+        const token = response.data?.data?.token;
         if (token) {
           localStorage.setItem("beanfarm_token", token);
+        } else {
+          console.error(
+            "Token extraction failed! Check response structure.",
+            response.data,
+          );
         }
         localStorage.setItem("beanfarm_machine_location", locationValue);
         setLoginSuccess("Login successful. Redirecting to dashboard...");
 
         setIsLoggedIn(true);
 
-        const userData = response.data?.user || response.data?.data;
+        const userData = response.data?.data;
 
         if (userData) {
           setUserProfile({

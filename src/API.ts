@@ -10,12 +10,18 @@ const BACKENDAPI = axios.create({
   baseURL: BACKEND_URL,
 });
 
-// Add a request interceptor to include the token in the Authorization header
+// Clean dynamic memory lookups on every single outgoing request pipeline
 BACKENDAPI.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("beanfarm_token");
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
+    // Check client storage dynamically right before dispatching the request
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("beanfarm_token");
+      if (token) {
+        config.headers["Authorization"] = `Bearer ${token}`;
+      } else {
+        // Fallback: Clear headers if no token exists to prevent parsing ghost headers
+        delete config.headers["Authorization"];
+      }
     }
     return config;
   },
