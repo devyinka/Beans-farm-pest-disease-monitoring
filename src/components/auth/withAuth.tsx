@@ -25,7 +25,7 @@ export function withAuth<T extends object>(Component: React.ComponentType<T>) {
         <div className="min-h-screen bg-[#11091f] flex flex-col items-center justify-center gap-3">
           <div className="w-10 h-10 border-4 border-[#67b978] border-t-transparent rounded-full animate-spin" />
           <p className="text-[#4f7059] text-sm font-semibold animate-pulse">
-            Authenticating user session...
+            please wait...
           </p>
         </div>
       );
