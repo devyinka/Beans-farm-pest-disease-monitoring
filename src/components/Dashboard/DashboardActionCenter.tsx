@@ -52,7 +52,7 @@ export const DashboardActionCenter = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className={`flex h-full min-h-[18rem] flex-col overflow-hidden rounded-2xl ${palette.card} sm:min-h-[24rem]`}
+        className={`flex h-full min-h-72 flex-col overflow-hidden rounded-2xl ${palette.card} sm:min-h-96`}
       >
         <div className="border-b border-black/5 px-5 py-4">
           <div className="flex items-center justify-between gap-3">
