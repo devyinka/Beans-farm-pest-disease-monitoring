@@ -153,7 +153,22 @@ const getSensorDisplayValue = (sensor: SensorItem) => {
   }
 
   if (sensor.id === "rain") {
-    return sensor.value > 0 ? "Yes" : "No";
+    if (sensor.value > 10 && sensor.value <= 20) {
+      return "very low";
+    }
+    if (sensor.value > 20 && sensor.value <= 50) {
+      return "low";
+    }
+    if (sensor.value > 50 && sensor.value <= 100) {
+      return "moderate";
+    }
+    if (sensor.value > 100 && sensor.value <= 200) {
+      return "high";
+    }
+    if (sensor.value > 200) {
+      return "very high";
+    }
+    return "dry";
   }
 
   if (Number.isInteger(sensor.value)) {
