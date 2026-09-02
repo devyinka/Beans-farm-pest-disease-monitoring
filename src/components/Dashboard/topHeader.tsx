@@ -153,24 +153,34 @@ const getSensorDisplayValue = (sensor: SensorItem) => {
   }
 
   if (sensor.id === "rain") {
-    if (sensor.value > 10 && sensor.value <= 20) {
+    // Exactly 0% means no rain
+    if (sensor.value === 0) {
+      return "dry";
+    }
+    // 1% to 20%: Very light drizzle / just starting
+    if (sensor.value > 0 && sensor.value <= 20) {
       return "very low";
     }
-    if (sensor.value > 20 && sensor.value <= 50) {
+    // 21% to 40%: Light rain
+    if (sensor.value > 20 && sensor.value <= 40) {
       return "low";
     }
-    if (sensor.value > 50 && sensor.value <= 100) {
-      return "moderate";
+    // 41% to 70%: Steady, moderate rain
+    if (sensor.value > 40 && sensor.value <= 70) {
+      return "normal";
     }
-    if (sensor.value > 100 && sensor.value <= 200) {
+    // 71% to 90%: Heavy rain
+    if (sensor.value > 70 && sensor.value <= 90) {
       return "high";
     }
-    if (sensor.value > 200) {
+    // 91% to 100%: Absolute downpour / flooded sensor
+    if (sensor.value > 90 && sensor.value <= 100) {
       return "very high";
     }
+
+    // Fallback just in case
     return "dry";
   }
-
   if (Number.isInteger(sensor.value)) {
     return sensor.value.toString();
   }
