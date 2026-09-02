@@ -225,7 +225,7 @@ export const SensorGrid = ({
                 className="mt-1 text-3xl font-bold leading-none lg:text-4xl"
                 style={{ color: valueColor }}
               >
-                {displayValue}
+                "Rain-value"
               </h4>
               <p
                 className="mt-1 truncate text-[11px]"
