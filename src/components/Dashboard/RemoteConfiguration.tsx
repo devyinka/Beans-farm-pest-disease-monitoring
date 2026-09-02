@@ -51,7 +51,18 @@ const getRemoteConfigPalette = (status: UIStatus) => {
 };
 
 const clampConfidence = (value: number) => Math.min(100, Math.max(50, value));
-const POLLING_INTERVAL_OPTIONS = [1, 10, 15, 30, 45, 60, 120];
+const POLLING_INTERVAL_OPTIONS = [
+  10 / 60,
+  0.25,
+  0.5,
+  1,
+  10,
+  15,
+  30,
+  45,
+  60,
+  120,
+];
 const QUICK_REMOTE_PROFILES = [
   { label: "Conservative", confidence: 90, interval: 45 },
   { label: "Balanced", confidence: 80, interval: 30 },
@@ -242,9 +253,11 @@ export const RemoteConfiguration = ({
                   {POLLING_INTERVAL_OPTIONS.map((minutes) => (
                     <option key={minutes} value={minutes}>
                       Every{" "}
-                      {minutes < 60
-                        ? `${minutes} Mins`
-                        : `${minutes / 60} Hr${minutes > 60 ? "s" : ""}`}
+                      {minutes < 1
+                        ? `${minutes * 60} Secs`
+                        : minutes < 60
+                          ? `${minutes} Min${minutes > 1 ? "s" : ""}`
+                          : `${minutes / 60} Hr${minutes > 60 ? "s" : ""}`}
                     </option>
                   ))}
                 </select>
